@@ -159,7 +159,7 @@ Node 22+, TypeScript strict, no runtime dependency beyond the driver.
 
 ## Languages
 
-TypeScript, 53,115 bytes — 100% of GitHub's language bar. Strict, with
+TypeScript, 53,589 bytes — 100% of GitHub's language bar. Strict, with
 `noUncheckedIndexedAccess` and `exactOptionalPropertyTypes` on; the 42 vitest
 tests are TypeScript too.
 
