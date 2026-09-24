@@ -6,10 +6,15 @@
  * will be told it is available, because it was when they asked.
  *
  * So availability is advice and the write is the authority. The conflict check
- * happens INSIDE the same transaction as the insert, against a uniqueness
- * constraint the database enforces — not in application code that ran a moment
- * earlier. Checking first and inserting second is the classic double-booking
- * bug, and it only shows up under exactly the load that makes it expensive.
+ * happens INSIDE the same transaction as the insert, re-reading what is booked
+ * rather than trusting what was offered. Checking first and inserting second is
+ * the classic double-booking bug, and it only shows up under exactly the load
+ * that makes it expensive.
+ *
+ * Two collisions, two mechanisms. An identical start instant is refused by the
+ * partial unique index below, which the database enforces. A partial overlap is
+ * not something a single-column constraint can express, so it is the explicit
+ * overlap check over the rows re-read inside the transaction.
  */
 
 import Database from 'better-sqlite3';
@@ -228,12 +233,15 @@ export class SchedulingEngine {
   /**
    * Move a booking.
    *
-   * Cancel and rebook in one transaction, so a reschedule that cannot land
-   * never destroys the appointment the person already had. Doing it as two
-   * calls means a failure between them leaves someone with nothing, which is
-   * worse than the failure they were trying to recover from.
+   * One transaction and one row: the slot is re-derived, the clash re-checked,
+   * and the start and end updated in place. Nothing is cancelled and
+   * re-inserted, so there is no moment when the old appointment is gone and the
+   * new one has not landed — a reschedule that cannot land leaves the booking
+   * exactly as it was. Doing it as two calls means a failure between them
+   * leaves someone with nothing, which is worse than the failure they were
+   * trying to recover from.
    *
-   * The token is preserved: the link in their email keeps working.
+   * The row keeps its id and its token: the link in their email keeps working.
    */
   reschedule(
     token: string,
