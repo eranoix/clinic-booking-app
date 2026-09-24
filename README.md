@@ -129,3 +129,19 @@ to Postgres unchanged; an exclusion constraint over a `tstzrange` replaces the
 in-transaction overlap check when more than one process writes.
 
 Node 22+, TypeScript strict, no runtime dependency beyond the driver.
+
+## Languages
+
+TypeScript, 53,115 bytes — 100% of GitHub's language bar. Strict, with
+`noUncheckedIndexedAccess` and `exactOptionalPropertyTypes` on; the 42 vitest
+tests are TypeScript too.
+
+Time-zone arithmetic is `Intl.DateTimeFormat` and no date library:
+`zonedTimeToUtc`, `dateInZone` and `weekdayInZone` in `src/availability.ts`
+resolve wall-clock against a named zone, which is what holds 09:00 local across
+a transition.
+
+The SQL is hand-written but embedded — the `bookings` DDL, the partial unique
+index on `(resource_id, starts_at)` and the WAL pragma are a template literal in
+`src/booking.ts`, so the build stays `tsc` with nothing to copy into `dist`, and
+the language bar reads TypeScript.

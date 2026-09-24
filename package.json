@@ -10,8 +10,7 @@
     "build": "tsc -p tsconfig.json",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "demo": "tsx examples/clinic.ts",
-    "serve": "tsx src/server.ts"
+    "demo": "tsx examples/clinic.ts"
   },
   "dependencies": {
     "better-sqlite3": "^11.7.0"
