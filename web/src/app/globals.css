@@ -1,0 +1,232 @@
+@import "tailwindcss";
+
+/*
+ * Quillmere's palette. Cool paper and slate ink; one accent, the blue of
+ * kinesiology tape, used for the thing you can act on. Staff are told apart by
+ * three quiet hues. Red is kept for errors only -- a cancellation is not an
+ * error, so it is shown struck through in grey, not in red.
+ */
+:root {
+  --bg: #eff2f1;
+  --surface: #ffffff;
+  --surface-2: #f6f8f7;
+  --ink: #16242a;
+  --ink-2: #4e5f66;
+  --ink-3: #7d8b90;
+  --line: #d6dddb;
+  --line-2: #e6ebe9;
+  --accent: #1d5c9a;
+  --accent-hover: #174c80;
+  --accent-ink: #ffffff;
+  --accent-soft: #e2ecf6;
+  --danger: #a3302f;
+  --danger-soft: #f8e5e3;
+  --ok: #276148;
+  --ok-soft: #e1efe7;
+  --notice: #7a5a12;
+  --notice-soft: #f6eed8;
+  --staff-blue: #2f6db5;
+  --staff-blue-soft: #e3edf8;
+  --staff-green: #2a7a5f;
+  --staff-green-soft: #e0f0e9;
+  --staff-ochre: #a77522;
+  --staff-ochre-soft: #f6ecd9;
+  --staff-plum: #8a4f86;
+  --staff-plum-soft: #f3e6f1;
+  --staff-slate: #55697a;
+  --staff-slate-soft: #e6ebef;
+  --grid-off: repeating-linear-gradient(135deg, transparent 0 6px, rgb(22 36 42 / 0.045) 6px 7px);
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1417;
+    --surface: #161d21;
+    --surface-2: #1b2328;
+    --ink: #e2e9eb;
+    --ink-2: #a2b1b6;
+    --ink-3: #74848a;
+    --line: #2a353b;
+    --line-2: #222c31;
+    --accent: #7eb1e6;
+    --accent-hover: #9cc4ee;
+    --accent-ink: #0c1a28;
+    --accent-soft: #1b2b3b;
+    --danger: #f08f86;
+    --danger-soft: #3a1f1d;
+    --ok: #82c9a6;
+    --ok-soft: #173026;
+    --notice: #e2c27a;
+    --notice-soft: #33290f;
+    --staff-blue: #7eaee6;
+    --staff-blue-soft: #1a2a3c;
+    --staff-green: #74c3a4;
+    --staff-green-soft: #16302a;
+    --staff-ochre: #dcb06a;
+    --staff-ochre-soft: #342a17;
+    --staff-plum: #d49ccd;
+    --staff-plum-soft: #33202f;
+    --staff-slate: #a3b6c6;
+    --staff-slate-soft: #222b33;
+    --grid-off: repeating-linear-gradient(135deg, transparent 0 6px, rgb(226 233 235 / 0.05) 6px 7px);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #0f1417;
+  --surface: #161d21;
+  --surface-2: #1b2328;
+  --ink: #e2e9eb;
+  --ink-2: #a2b1b6;
+  --ink-3: #74848a;
+  --line: #2a353b;
+  --line-2: #222c31;
+  --accent: #7eb1e6;
+  --accent-hover: #9cc4ee;
+  --accent-ink: #0c1a28;
+  --accent-soft: #1b2b3b;
+  --danger: #f08f86;
+  --danger-soft: #3a1f1d;
+  --ok: #82c9a6;
+  --ok-soft: #173026;
+  --notice: #e2c27a;
+  --notice-soft: #33290f;
+  --staff-blue: #7eaee6;
+  --staff-blue-soft: #1a2a3c;
+  --staff-green: #74c3a4;
+  --staff-green-soft: #16302a;
+  --staff-ochre: #dcb06a;
+  --staff-ochre-soft: #342a17;
+  --staff-plum: #d49ccd;
+  --staff-plum-soft: #33202f;
+  --staff-slate: #a3b6c6;
+  --staff-slate-soft: #222b33;
+  --grid-off: repeating-linear-gradient(135deg, transparent 0 6px, rgb(226 233 235 / 0.05) 6px 7px);
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-line: var(--line);
+  --color-line-2: var(--line-2);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-notice: var(--notice);
+  --color-notice-soft: var(--notice-soft);
+  --font-sans: var(--font-grotesk), ui-sans-serif, system-ui, sans-serif;
+  /* A modular scale on a 4:3 ratio from 15px. */
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1.1rem;
+  --text-sm: 0.84375rem;
+  --text-sm--line-height: 1.3rem;
+  --text-base: 0.9375rem;
+  --text-base--line-height: 1.5rem;
+  --text-lg: 1.25rem;
+  --text-lg--line-height: 1.75rem;
+  --text-xl: 1.666rem;
+  --text-xl--line-height: 2.1rem;
+  --text-2xl: 2.222rem;
+  --text-2xl--line-height: 2.6rem;
+  --text-3xl: 2.963rem;
+  --text-3xl--line-height: 3.2rem;
+}
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+html {
+  background: var(--bg);
+  color: var(--ink);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: var(--text-base--line-height);
+  -webkit-font-smoothing: antialiased;
+}
+
+/*
+ * Times and counts. Lining figures only: Schibsted Grotesk's tabular set also
+ * widens the colon, and "14 : 00" reads worse than a column that is a hair
+ * uneven.
+ */
+.tnum {
+  font-variant-numeric: lining-nums;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+::selection {
+  background: var(--accent-soft);
+}
+
+/* Staff hue tokens, applied by class so markup names a person, not a colour. */
+.hue-blue { --hue: var(--staff-blue); --hue-soft: var(--staff-blue-soft); }
+.hue-green { --hue: var(--staff-green); --hue-soft: var(--staff-green-soft); }
+.hue-ochre { --hue: var(--staff-ochre); --hue-soft: var(--staff-ochre-soft); }
+.hue-plum { --hue: var(--staff-plum); --hue-soft: var(--staff-plum-soft); }
+.hue-slate { --hue: var(--staff-slate); --hue-soft: var(--staff-slate-soft); }
+
+.off-hours {
+  background-image: var(--grid-off);
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator {
+  opacity: 0.6;
+}
+:root[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator,
+:root[data-theme="dark"] input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@utility field {
+  @apply block w-full rounded-md border border-line bg-surface px-3 py-2 text-base text-ink;
+  @apply focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/25;
+}
+@utility label {
+  @apply mb-1 block text-sm font-medium text-ink-2;
+}
+@utility btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-base font-medium transition-colors;
+  @apply disabled:cursor-not-allowed disabled:opacity-50;
+}
+@utility btn-primary {
+  @apply btn bg-accent text-accent-ink hover:bg-accent-hover;
+}
+@utility btn-quiet {
+  @apply btn border border-line bg-surface text-ink hover:border-ink-3;
+}
+@utility btn-danger {
+  @apply btn border border-danger/40 bg-surface text-danger hover:bg-danger-soft;
+}
+@utility panel {
+  @apply rounded-lg border border-line bg-surface;
+}

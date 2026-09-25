@@ -1,0 +1,45 @@
+{
+  "name": "clinic-booking-app-web",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Front desk and public booking site for a fictional physiotherapy clinic, built on the clinic-booking-app engine.",
+  "type": "module",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "engine": "npm --prefix .. run build && node scripts/sync-engine.mjs",
+    "predev": "npm run engine",
+    "dev": "next dev -H 127.0.0.1",
+    "prebuild": "npm run engine",
+    "build": "next build",
+    "start": "next start -H 127.0.0.1",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "reset": "tsx --conditions=react-server --tsconfig tsconfig.json scripts/reset.ts"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.7.0",
+    "next": "^15.5.4",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "clinic-booking-app": "file:..",
+    "server-only": "^0.0.1"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.3.1",
+    "@tailwindcss/postcss": "^4.1.13",
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "eslint": "^9.36.0",
+    "eslint-config-next": "^15.5.4",
+    "tailwindcss": "^4.1.13",
+    "tsx": "^4.23.15",
+    "typescript": "^5.7.2"
+  },
+  "overrides": {
+    "postcss": "^8.5.23"
+  }
+}
