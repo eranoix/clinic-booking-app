@@ -1,0 +1,22 @@
+# docker compose up --build   ->  http://localhost:3000/book and /admin
+#
+# Settings come from .env next to this file (see .env.example). The database
+# lives on the clinic-data volume, so it survives restarts and rebuilds;
+# `docker compose down -v` deletes it, and the next start seeds a fresh one.
+services:
+  clinic:
+    build: .
+    image: clinic-booking-app:local
+    ports:
+      # Loopback only: the front desk has no sign-in unless ADMIN_PASSWORD is set.
+      - "127.0.0.1:${PORT:-3000}:3000"
+    environment:
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      SESSION_SECRET: ${SESSION_SECRET:-}
+      PUBLIC_URL: ${PUBLIC_URL:-http://localhost:${PORT:-3000}}
+    volumes:
+      - clinic-data:/data
+    restart: unless-stopped
+
+volumes:
+  clinic-data:
