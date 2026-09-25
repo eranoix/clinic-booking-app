@@ -36,3 +36,73 @@ jobs:
           echo "$out"
           echo "$out" | grep -q 'Second attempt refused'
           echo "$out" | grep -q 'Sat 7 Mar opened for one week: true'
+
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            web/package-lock.json
+      # web/ installs the engine from the parent directory, so the engine is
+      # installed and built first.
+      - run: npm ci
+      - run: npm run build
+      - run: npm ci
+        working-directory: web
+      - run: npm run lint
+        working-directory: web
+      - run: npm run typecheck
+        working-directory: web
+      - run: npm run build
+        working-directory: web
+      - name: Start the site with no sign-in and walk every flow
+        working-directory: web
+        run: |
+          npm start -- -p 3100 > server.log 2>&1 &
+          echo $! > server.pid
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:3100/book > /dev/null && break; sleep 1; done
+          for path in / /book /admin /admin/bookings /admin/bookings/new /admin/availability /admin/team /admin/services /admin/patients /admin/outbox; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:3100$path")
+            echo "$code $path"; test "$code" = 200
+          done
+          node scripts/smoke.mjs http://127.0.0.1:3100
+          kill "$(cat server.pid)"
+      - name: Start it again with ADMIN_PASSWORD and walk every flow signed in
+        working-directory: web
+        env:
+          ADMIN_PASSWORD: ci-password
+        run: |
+          npm start -- -p 3101 > server-auth.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:3101/book > /dev/null && break; sleep 1; done
+          node scripts/smoke.mjs http://127.0.0.1:3101 --password "$ADMIN_PASSWORD"
+      - name: Server logs
+        if: failure()
+        working-directory: web
+        run: cat server.log server-auth.log 2>/dev/null || true
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and start with docker compose
+        env:
+          PORT: '3200'
+        run: docker compose up --build --detach --wait --wait-timeout 180
+      - name: The booking page and the front desk answer
+        run: |
+          for path in /book /admin; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:3200$path")
+            echo "$code $path"; test "$code" = 200
+          done
+          curl -s http://127.0.0.1:3200/admin | grep -q 'no sign-in'
+      - name: Container logs
+        if: always()
+        run: docker compose logs
+      - name: Stop
+        if: always()
+        run: docker compose down --volumes
