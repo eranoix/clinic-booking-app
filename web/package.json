@@ -19,11 +19,11 @@
     "reset": "tsx --conditions=react-server --tsconfig tsconfig.json scripts/reset.ts"
   },
   "dependencies": {
-    "better-sqlite3": "^11.7.0",
+    "better-sqlite3": "^12.11.1",
+    "clinic-booking-app": "file:..",
     "next": "^15.5.4",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "clinic-booking-app": "file:..",
     "server-only": "^0.0.1"
   },
   "devDependencies": {
