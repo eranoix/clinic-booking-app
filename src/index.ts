@@ -8,4 +8,7 @@ export type {
 export { expand, describe, InvalidRule } from './recurrence.js';
 export type { ExpandOptions, Frequency, RecurrenceRule } from './recurrence.js';
 export { SchedulingEngine, SlotUnavailable, BookingNotFound } from './booking.js';
-export type { Booking, BookingStatus, BookRequest, EngineOptions } from './booking.js';
+export type {
+  Booking, BookingEvent, BookingStatus, BookRequest, CustomerSummary, EngineOptions, ListQuery,
+  OutboxDraft, OutboxMessage, SkippedOccurrence, SlotUnavailableReason,
+} from './booking.js';

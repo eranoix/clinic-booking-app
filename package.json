@@ -1,5 +1,5 @@
 {
-  "name": "scheduling-engine",
+  "name": "clinic-booking-app",
   "version": "1.0.0",
   "description": "Availability rules, recurrence and conflict-free booking, with tokenised reschedule and cancel links.",
   "type": "module",
@@ -9,19 +9,25 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./availability": {
+      "types": "./dist/availability.d.ts",
+      "default": "./dist/availability.js"
     }
   },
   "files": [
     "dist"
   ],
   "engines": {
-    "node": ">=22"
+    "node": ">=22.12"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "demo": "tsx examples/clinic.ts"
+    "demo": "tsx examples/clinic.ts",
+    "app": "node scripts/app.mjs",
+    "reset": "npm --prefix web run reset"
   },
   "dependencies": {
     "better-sqlite3": "^11.7.0"
@@ -31,7 +37,8 @@
     "@types/node": "^22.10.0",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
-    "vitest": "^2.1.8"
+    "vite": "^8.3.1",
+    "vitest": "^5.0.2"
   },
   "license": "MIT"
 }

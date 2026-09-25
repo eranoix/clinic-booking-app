@@ -99,10 +99,29 @@ export function zonedTimeToUtc(
   return ts;
 }
 
+/**
+ * Formatters are cached per zone and shape. Constructing an
+ * Intl.DateTimeFormat costs far more than using one -- it loads locale and
+ * zone data -- and slot generation formats thousands of instants for a
+ * handful of zones. A formatter holds no state between calls, so sharing one
+ * cannot change a result.
+ */
+const formatters = new Map<string, Intl.DateTimeFormat>();
+function formatter(
+  key: string, locale: string, timeZone: string, opts: Intl.DateTimeFormatOptions,
+): Intl.DateTimeFormat {
+  const id = `${key}|${timeZone}`;
+  let fmt = formatters.get(id);
+  if (!fmt) {
+    fmt = new Intl.DateTimeFormat(locale, { timeZone, ...opts });
+    formatters.set(id, fmt);
+  }
+  return fmt;
+}
+
 /** What an instant reads as on a clock in that zone, expressed as a UTC stamp. */
 function wallClockInZone(ts: number, timeZone: string): number {
-  const fmt = new Intl.DateTimeFormat('en-US', {
-    timeZone,
+  const fmt = formatter('wall', 'en-US', timeZone, {
     year: 'numeric', month: '2-digit', day: '2-digit',
     hour: '2-digit', minute: '2-digit', second: '2-digit',
     hour12: false,
@@ -119,15 +138,14 @@ function wallClockInZone(ts: number, timeZone: string): number {
 
 /** Calendar date in a zone, as "YYYY-MM-DD". */
 export function dateInZone(ts: number, timeZone: string): string {
-  const fmt = new Intl.DateTimeFormat('en-CA', {
-    timeZone, year: 'numeric', month: '2-digit', day: '2-digit',
-  });
-  return fmt.format(new Date(ts));
+  return formatter('date', 'en-CA', timeZone, {
+    year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(new Date(ts));
 }
 
 /** Weekday in a zone, 0 = Sunday. */
 export function weekdayInZone(ts: number, timeZone: string): number {
-  const name = new Intl.DateTimeFormat('en-US', { timeZone, weekday: 'short' })
+  const name = formatter('weekday', 'en-US', timeZone, { weekday: 'short' })
     .format(new Date(ts));
   return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].indexOf(name);
 }

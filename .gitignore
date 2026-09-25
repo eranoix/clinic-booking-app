@@ -2,3 +2,11 @@ node_modules
 dist
 *.db
 *.db-journal
+web/.next
+web/node_modules
+web/data
+*.tsbuildinfo
+.env
+.env.*.local
+.env.local
+web/.env*
