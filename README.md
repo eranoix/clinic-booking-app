@@ -4,9 +4,11 @@
 
 *In plain words:* Booking an appointment by phone takes time for both the patient and the clinic. This app lets patients pick a free time online and get a link to change or cancel it later, with no account to create. Staff get a front desk screen to see the day, set working hours and handle bookings. The system makes sure two people can never book the same time slot.
 
-Availability rules, recurrence and conflict-free booking — with reschedule and
+Availability rules, recurrence and conflict-free booking, with reschedule and
 cancel links that work without an account. And a clinic's booking site built
 on it, to show what that means for the people using it.
+
+<p align="center"><img src="docs/screenshots/dashboard.png" width="49%" alt="The front desk's day sheet"> <img src="docs/screenshots/dashboard-dark.png" width="49%" alt="The front desk's day sheet (dark)"></p>
 
 ## Run it
 
@@ -19,7 +21,7 @@ npm run app
 ```
 
 It installs whatever is missing, builds the engine and the site, and starts
-it on <http://127.0.0.1:3000> — the booking page at `/book`, the front desk at
+it on <http://127.0.0.1:3000>: the booking page at `/book`, the front desk at
 `/admin`. If 3000 is taken it uses the next free port and says which.
 
 **2. Docker, with no Node on the host.**
@@ -100,7 +102,7 @@ and offers the three closest times still free.
 
 The site sends no email. Every confirmation, move and cancellation is written
 to an **outbox** instead, in the same database transaction as the change it
-describes — so a message exists exactly when the change committed. The
+describes, so a message exists exactly when the change committed. The
 confirmation screen links to the email you would have received, with the
 manage link in it, and the front desk's **Outbox** lists every message. The
 "you get a link" promise can be followed end to end.
@@ -114,8 +116,8 @@ manage link in it, and the front desk's **Outbox** lists every message. The
   one, a treatment, a practitioner or whoever is free first, then only the
   times the engine offers. The desk may book inside the online notice period;
   hours, gaps and other appointments still apply, and losing a race reads the
-  same as on `/book`. It can book a **course** instead — weekly for six weeks,
-  say — and shows which dates were booked and, for the ones that could not
+  same as on `/book`. It can book a **course** instead (weekly for six weeks,
+  say) and shows which dates were booked and, for the ones that could not
   be, why.
 - **Bookings** finds anything by date, practitioner, service, status or
   patient. A booking can be moved to another time *or another practitioner*
@@ -127,25 +129,23 @@ manage link in it, and the front desk's **Outbox** lists every message. The
   `book()` checks against, running in the browser. Changing hours never
   cancels anyone; the page lists the appointments now outside them.
 - **Team** and **Services** add, rename and edit practitioners and treatments.
-  One with bookings is deactivated, never deleted — the page says why: its
+  One with bookings is deactivated, never deleted, and the page says why: its
   history keeps its name, and it stops being offered. One with no bookings at
   all can be removed.
 - **Patients** lists everyone who has booked, and each person's history.
 
-| Day sheet | New booking |
+| Booking, on a phone | New booking |
 |---|---|
-| ![The front desk's day sheet](docs/screenshots/dashboard.png) | ![Booking a patient from the front desk](docs/screenshots/new-booking.png) |
+| <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/booking-page-phone-dark.png"><img src="docs/screenshots/booking-page-phone.png" alt="The booking page on a phone" width="300"></picture> | <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/new-booking-dark.png"><img src="docs/screenshots/new-booking.png" alt="Booking a patient from the front desk"></picture> |
 | **Hours, with an unsaved change previewed** | **A course, with a skipped date explained** |
-| ![Weekly hours with the preview](docs/screenshots/availability.png) | ![Five of six sessions booked](docs/screenshots/course-result.png) |
+| <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/availability-dark.png"><img src="docs/screenshots/availability.png" alt="Weekly hours with the preview"></picture> | <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/course-result-dark.png"><img src="docs/screenshots/course-result.png" alt="Five of six sessions booked"></picture> |
 | **Bookings** | **Outbox** |
-| ![Bookings with filters](docs/screenshots/bookings.png) | ![The message a patient would receive](docs/screenshots/outbox-message.png) |
+| <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/bookings-dark.png"><img src="docs/screenshots/bookings.png" alt="Bookings with filters"></picture> | <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/outbox-message-dark.png"><img src="docs/screenshots/outbox-message.png" alt="The message a patient would receive"></picture> |
 | **Booking, as a patient** | **Team** |
-| ![Choosing a treatment and a time](docs/screenshots/booking-page.png) | ![Practitioners, and one who has left](docs/screenshots/team.png) |
-
-<p align="center"><img src="docs/screenshots/booking-page-phone.png" alt="The booking page on a phone" width="300"></p>
+| <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/booking-page-dark.png"><img src="docs/screenshots/booking-page.png" alt="Choosing a treatment and a time"></picture> | <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/team-dark.png"><img src="docs/screenshots/team.png" alt="Practitioners, and one who has left"></picture> |
 
 `node web/scripts/smoke.mjs http://127.0.0.1:3000` walks all of it against a
-running server — the patient's flow, a front-desk booking, a move to another
+running server: the patient's flow, a front-desk booking, a move to another
 practitioner, a course and its cancellation, the Outbox, and sign-in when you
 pass `--password`. CI runs it with sign-in off and on, and runs the Docker
 image too.
@@ -225,12 +225,12 @@ matters less than when: inside the transaction, nothing can commit between the
 read and the insert.
 
 Every write transaction starts `IMMEDIATE`: it takes SQLite's write lock
-before it reads, so a second connection — another server process on the same
-file — waits instead of committing between our check and our write. The tests
+before it reads, so a second connection (another server process on the same
+file) waits instead of committing between our check and our write. The tests
 open two engines on one file and make the second one lose.
 
-Two collisions need two mechanisms. A partial overlap — 09:00 to 09:50 against
-one starting at 09:30 — is the explicit overlap check over the rows re-read
+Two collisions need two mechanisms. A partial overlap (09:00 to 09:50 against
+one starting at 09:30) is the explicit overlap check over the rows re-read
 inside the transaction. A second booking starting at the same instant is also
 refused by a partial unique index on `(resource_id, starts_at)` limited to
 confirmed rows: enforced by the database itself, so it holds even against a
@@ -239,11 +239,11 @@ writer that goes around the engine, and it is the shape the Postgres port keeps.
 A reschedule is one transaction too, and one row: the same checks run, and then
 the start and end are updated in place. Nothing is cancelled and re-inserted, so
 there is no moment when the old appointment is gone and the new one has not
-landed — a move that cannot land leaves the original exactly as it was. Done as
+landed: a move that cannot land leaves the original exactly as it was. Done as
 two calls, that moment exists, and a failure inside it leaves someone with
 nothing.
 
-That holds for a move to **another resource** as well — a different
+That holds for a move to **another resource** as well: a different
 practitioner, a different room. The resource is a column of the same row, so
 the move is the same single `UPDATE`, checked against the new resource's
 calendar and bookings. At no instant does the appointment exist twice, or not
@@ -256,8 +256,8 @@ whose confirmation was lost because the mail server was down is wrong the other
 way. Sending from the request handler gets one of those eventually.
 
 So the engine has a **transactional outbox**. Give it a composer and every
-change — booked, moved, cancelled, a course booked, the rest of a course
-cancelled — calls it inside the transaction that makes the change, and writes
+change (booked, moved, cancelled, a course booked, the rest of a course
+cancelled) calls it inside the transaction that makes the change, and writes
 what it returns to an `outbox` table in that same transaction. A message
 exists exactly when its change committed. If the composer throws, the change
 rolls back with it. Delivering the messages is someone else's job, reading the
@@ -353,7 +353,7 @@ on one temporary file.
 ## Scope
 
 Recurrence covers daily, weekly-by-weekday and monthly-by-day-of-month with
-count, until and exception dates — a deliberate subset of RFC 5545. The full
+count, until and exception dates: a deliberate subset of RFC 5545. The full
 specification includes rules almost nobody schedules against, and each one is a
 branch that can be wrong.
 
@@ -374,7 +374,7 @@ Time-zone arithmetic is `Intl.DateTimeFormat` and no date library:
 resolve wall-clock against a named zone, which is what holds 09:00 local across
 a transition.
 
-The SQL is hand-written but embedded — the `bookings` and `outbox` DDL, the
+The SQL is hand-written but embedded: the `bookings` and `outbox` DDL, the
 partial unique index on `(resource_id, starts_at)` and the lookup indexes over
 the booking window, the series id and the outbox recipient are a template
 literal in `src/booking.ts`, so the

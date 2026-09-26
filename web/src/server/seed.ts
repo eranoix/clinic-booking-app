@@ -95,7 +95,7 @@ const FIRST = [
   'Kasia', 'Lorenzo', 'Mariana', 'Noah', 'Otília', 'Pedro', 'Rosa', 'Samuel', 'Teresa', 'Vasco',
 ];
 const LAST = [
-  'Albergaria', 'Bettencourt', 'Carvalhal', 'Damasceno', 'Esteves', 'Figueiral', 'Gaspar',
+  'Albergaria', 'Bettencourt', 'Cordeiro', 'Damasceno', 'Esteves', 'Figueiral', 'Gaspar',
   'Hollander', 'Ivens', 'Jardim', 'Lobato', 'Madureira', 'Nogueira', 'Oliveira-Brandão', 'Pestana',
   'Quaresma', 'Rebelo', 'Salgueiro', 'Tavares', 'Ulrich', 'Valadares', 'Wendt', 'Xisto', 'Zagalo',
 ];
