@@ -10,12 +10,9 @@ const PAGE = 14;
 type Days = { date: string; count: number }[];
 
 /**
- * A two-week strip of days with how many times each has free, and the free
- * times of the chosen day. Every number here comes from the engine through
- * /api/days and /api/slots; nothing is guessed in the browser.
- *
- * `refreshKey` forces a re-read, which is what happens after a booking
- * attempt loses a race: the list the person was looking at is stale.
+ * A two-week strip of days with free-time counts, and the free times of the
+ * chosen day, all from the engine via /api/days and /api/slots. Changing
+ * `refreshKey` forces a re-read, e.g. after a booking attempt loses a race.
  */
 export function TimePicker({
   serviceId, staffId, todayDate, horizonDays, date, onDate, slot, onSlot, refreshKey = 0, showStaff, rules = 'public',

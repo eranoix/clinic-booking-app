@@ -40,7 +40,6 @@ describe('weekly', () => {
   });
 
   it('skips exception dates without consuming the count', () => {
-    // A holiday should not shorten the series; the person asked for four.
     const out = expand({
       rule: {
         frequency: 'weekly', byWeekday: [1], count: 4,
@@ -54,9 +53,6 @@ describe('weekly', () => {
   });
 
   it('keeps the local hour across a daylight-saving boundary', () => {
-    // The failure this guards: adding 7 x 86_400_000 lands the series an hour
-    // early or late after the clocks move, and nobody notices until someone
-    // misses an appointment.
     const out = expand({
       rule: { frequency: 'weekly', byWeekday: [1], count: 6 },
       start: at('2026-03-09', '09:00'), timeZone: LISBON,
@@ -68,8 +64,6 @@ describe('weekly', () => {
 
 describe('monthly', () => {
   it('skips months that are too short rather than clamping', () => {
-    // Clamping the 31st to the 28th invents an occurrence nobody asked for,
-    // and it shows up as a stranger in someone's calendar.
     const out = expand({
       rule: { frequency: 'monthly', byMonthDay: [31], count: 4 },
       start: at('2026-01-31', '09:00'), timeZone: LISBON,
@@ -99,8 +93,6 @@ describe('bounds', () => {
   });
 
   it('caps an unbounded rule instead of running forever', () => {
-    // An unbounded expansion fails as a process that stops responding, which
-    // is harder to diagnose than one that reports a limit.
     const out = expand({
       rule: { frequency: 'daily' },
       start: at('2026-03-02', '09:00'), timeZone: LISBON, limit: 10,
@@ -129,9 +121,6 @@ describe('describe', () => {
 
 describe('regressions', () => {
   it('count of zero yields nothing', () => {
-    // Found by an adversarial probe: push happened before the budget check,
-    // so a count of 0 returned one occurrence. That surfaces as a single
-    // unexplained appointment rather than as an error.
     expect(expand({
       rule: { frequency: 'daily', count: 0 },
       start: at('2026-03-02', '09:00'), timeZone: LISBON,
@@ -139,8 +128,6 @@ describe('regressions', () => {
   });
 
   it('refuses a weekday outside 0-6 instead of inventing dates', () => {
-    // Weekday 9 used to become "two days into next week" by arithmetic. A
-    // wrong answer delivered confidently is worse than a refusal.
     expect(() => expand({
       rule: { frequency: 'weekly', byWeekday: [9], count: 2 },
       start: at('2026-03-02', '09:00'), timeZone: LISBON,

@@ -1,18 +1,8 @@
 /**
- * First-run data: a small physiotherapy clinic with three practitioners (and
- * a fourth who has left, whose history stays) and a few weeks of bookings
- * either side of today.
- *
- * Every booking goes through the engine's public API -- `available()`,
- * `book()`, `bookSeries()`, `reschedule()`, `cancel()` -- with the engine's
- * clock set to the moment the booking would have been made. So the history
- * obeys the same rules a live booking does: notice periods, booking horizons,
- * buffers, exceptions, no overlaps. A booking the rules would have refused
- * simply does not appear, rather than being inserted behind the engine's back.
- *
- * Deterministic for a given start date: the pseudo-random generator is seeded,
- * so two fresh databases created on the same day look the same.
- *
+ * First-run data: a small physiotherapy clinic and a few weeks of bookings
+ * either side of today. Every booking goes through the engine's public API
+ * with its clock set to when the booking would have been made, so the history
+ * obeys the same rules as a live booking. Deterministic for a given start date.
  * Every name is invented and every email is @example.com.
  */
 import 'server-only';
@@ -117,7 +107,6 @@ export function seed({ file, catalog, now }: { file: string; catalog: Catalog; n
   const random = rng(Number(startDate.replaceAll('-', '')));
   const pick = <T,>(xs: readonly T[]): T => xs[Math.floor(random() * xs.length)]!;
 
-  // -- catalogue ------------------------------------------------------------
   const nextMonday = addDays(mondayOf(startDate), 7);
   const exceptions: Record<string, { date: string; kind: 'closed' | 'open'; note: string; windows?: { start: string; end: string }[] }[]> = {
     marta: [{ date: addDays(nextMonday, 3), kind: 'closed', note: 'Training course' }],
@@ -144,20 +133,16 @@ export function seed({ file, catalog, now }: { file: string; catalog: Catalog; n
     catalog.staff().map((s) => [s.id, s.calendar]),
   );
 
-  // -- people ---------------------------------------------------------------
   const people = Array.from({ length: 46 }, (_, i) => {
     const first = FIRST[i % FIRST.length]!;
     const last = LAST[(i * 7) % LAST.length]!;
     const slug = `${first}.${last}`.toLowerCase().normalize('NFD').replace(/[^a-z.]/g, '');
     return { name: `${first} ${last}`, email: `${slug}@example.com` };
   });
-  // Regulars come back; a physio clinic is mostly repeat visits.
   const regulars = people.slice(0, 18);
 
-  // -- bookings, made through the engine with its clock wound back -----------
   let clock = now;
-  // Messages only for the last two days of activity: enough for the Outbox
-  // to open populated, without a thousand confirmations nobody would read.
+  // Messages only for the last two days of activity, so the Outbox is not flooded.
   const compose = composer(catalog);
   const engine = new SchedulingEngine({
     path: file, now: () => clock, outbox: (e) => (clock >= now - 2 * DAY ? compose(e) : null),

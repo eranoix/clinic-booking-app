@@ -25,11 +25,7 @@ export function MessageView({ message }: { message: OutboxMessage }) {
   );
 }
 
-/**
- * Links in messages are absolute (as they would be in an email) and point at
- * PUBLIC_URL. Followed from inside this app they are made relative, so the
- * demo works whatever address it is actually opened on.
- */
+/** Absolute links to PUBLIC_URL are made relative, so the demo works on whatever address it is opened on. */
 function toLocal(href: string): string {
   try {
     const u = new URL(href);

@@ -1,10 +1,7 @@
 /**
- * Formatting and calendar-date arithmetic, always in the clinic's zone.
- *
- * Safe for the browser: it imports only the engine's pure availability entry
- * point, never the database. Instants are UTC epoch milliseconds throughout;
- * a "date" is a "YYYY-MM-DD" string in the clinic's zone, and the two are
- * converted only here.
+ * Formatting and calendar-date arithmetic in the clinic's zone. Browser-safe:
+ * imports only the engine's pure availability entry point. Instants are UTC
+ * epoch ms; a "date" is "YYYY-MM-DD" in the clinic's zone.
  */
 import { dateInZone, weekdayInZone, zonedTimeToUtc } from 'clinic-booking-app/availability';
 import { CLINIC } from './clinic';

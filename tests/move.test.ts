@@ -89,9 +89,8 @@ describe('moving to another resource', () => {
   });
 
   it('loses cleanly to another connection that took the time first', () => {
-    // Two server processes on one database file. The first one looked at the
-    // other practitioner's diary and saw 09:00 free; before it moves the
-    // booking there, the second process books 09:00 for someone else.
+    // Two connections on one file: the second books the target time before
+    // the first moves a booking there.
     const file = tempFile();
     const desk = engine(file);
     const web = engine(file);

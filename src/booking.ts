@@ -1,20 +1,9 @@
 /**
- * Booking: the part that has to be right under concurrency.
- *
- * Offering a slot and taking it are separated in time by however long a person
- * spends deciding. Two people can be looking at the same free slot, and both
- * will be told it is available, because it was when they asked.
- *
- * So availability is advice and the write is the authority. The conflict check
- * happens INSIDE the same transaction as the insert, re-reading what is booked
- * rather than trusting what was offered. Checking first and inserting second is
- * the classic double-booking bug, and it only shows up under exactly the load
- * that makes it expensive.
- *
- * Two collisions, two mechanisms. An identical start instant is refused by the
- * partial unique index below, which the database enforces. A partial overlap is
- * not something a single-column constraint can express, so it is the explicit
- * overlap check over the rows re-read inside the transaction.
+ * Booking under concurrency. Availability is advice and the write is the
+ * authority: the conflict check re-reads what is booked inside the same
+ * transaction as the insert, since check-then-insert is the classic
+ * double-booking race. An identical start instant is also refused by the
+ * partial unique index; partial overlaps are caught by the explicit check.
  */
 
 import Database from 'better-sqlite3';
@@ -73,11 +62,9 @@ export type BookingStatus = 'confirmed' | 'cancelled';
 export interface Booking {
   id: number;
   /**
-   * Unguessable id used in reschedule and cancel links.
-   *
-   * Separate from the numeric id on purpose: a sequential id in a URL lets
-   * anyone enumerate other people's appointments, and the link has to work
-   * without a login because the person booking may not have an account.
+   * Unguessable id used in reschedule and cancel links. Separate from the
+   * numeric id because the links work without a login, and a sequential id
+   * would let anyone enumerate other people's appointments.
    */
   publicToken: string;
   resourceId: string;
@@ -108,18 +95,11 @@ interface Row {
 }
 
 /**
- * Why a slot could not be taken.
- *
- * `taken`: the rules offer that time, but a confirmed booking now occupies it
- * -- the race between seeing a slot and taking it, lost. The person should be
- * shown the nearest alternatives.
- *
- * `not-offered`: the rules never offered that time (outside opening hours, too
- * soon, too far ahead, off the grid). Showing alternatives "near" it would be
- * answering a different question.
- *
- * A field rather than two subclasses, so every existing
- * `instanceof SlotUnavailable` keeps catching both.
+ * Why a slot could not be taken. `taken`: the rules offer that time but a
+ * confirmed booking now occupies it, so nearby alternatives are worth showing.
+ * `not-offered`: the rules never offered it (outside hours, too soon, too far
+ * ahead, off the grid). A field rather than subclasses, so
+ * `instanceof SlotUnavailable` catches both.
  */
 export type SlotUnavailableReason = 'taken' | 'not-offered';
 
@@ -167,12 +147,9 @@ export interface ListQuery {
 }
 
 /**
- * One person, as seen through their bookings.
- *
- * There is no customer table: the booking row is the only place a customer is
- * ever written, because booking needs no account. So a customer is derived --
- * grouped by lower-cased email -- and cannot drift out of step with the history
- * it summarises.
+ * One person, as seen through their bookings. There is no customer table
+ * (booking needs no account), so a customer is derived by grouping on the
+ * lower-cased email and cannot drift out of step with its history.
  */
 export interface CustomerSummary {
   /** Lower-cased: the grouping key. */
@@ -231,28 +208,18 @@ export interface EngineOptions {
   now?: () => number;
   newToken?: () => string;
   /**
-   * Turn a change into messages -- confirmations, notices of a move or a
-   * cancellation -- or return null for none.
-   *
-   * This is a transactional outbox. The composer runs inside the transaction
-   * that makes the change, and what it returns is written in that same
-   * transaction: a message exists exactly when the change it describes
-   * committed. Sending email straight from the request handler gets this wrong
-   * both ways -- a confirmation for a booking that then rolled back, or a
-   * booking whose confirmation was lost because the mail server was down.
-   * If the composer throws, the change is rolled back with it.
-   *
-   * Nothing is delivered here. Something else reads the outbox and sends.
+   * Turn a change into messages, or return null for none. Transactional
+   * outbox: the composer runs inside the transaction that makes the change and
+   * its drafts are written in that same transaction, so a message exists
+   * exactly when its change committed. If the composer throws, the change rolls
+   * back. Delivery is someone else's job.
    */
   outbox?: (event: BookingEvent) => OutboxDraft | OutboxDraft[] | null;
 }
 
 /**
- * Bring a database created by an earlier version up to the current schema.
- *
- * `held_until` arrived after the first release. A row written before it has
- * no record of its service's buffer, so it is backfilled with its own end: it
- * holds exactly the appointment, which is what the old version enforced.
+ * Add `held_until` to databases created without it. Old rows have no record of
+ * their service's buffer, so they are backfilled with their own end.
  */
 function migrate(db: Db): void {
   const columns = db.prepare<[], { name: string }>('PRAGMA table_info(bookings)').all();
@@ -302,12 +269,8 @@ export class SchedulingEngine {
 
   /**
    * Time a resource cannot offer, from confirmed bookings overlapping a window.
-   *
-   * Each interval runs from a booking's start to the end of its buffer, not
-   * just to the end of the appointment: the buffer is held by the booking
-   * that needs it. Holding it only on the slot being offered made the gap
-   * depend on booking order -- the time after an existing appointment was
-   * offered to the next person, and book() did not check buffers at all.
+   * Each interval runs to the end of the booking's buffer: the buffer is held
+   * by the booking that needs it, so the gap does not depend on booking order.
    */
   busy(resourceId: string, from: number, to: number): Interval[] {
     return this.held(resourceId, from, to, -1);
@@ -343,13 +306,9 @@ export class SchedulingEngine {
   }
 
   /**
-   * Take a slot.
-   *
-   * Everything that decides whether this is allowed happens inside one
-   * transaction: re-derive the slot from the rules, re-read what is booked,
-   * check for an overlap, insert. A slot that was free when it was offered and
-   * taken in between is refused here, which is the only place it can be
-   * refused correctly.
+   * Take a slot. One transaction re-derives the slot from the rules, re-reads
+   * what is booked, checks for an overlap and inserts, so a slot taken since it
+   * was offered is refused here.
    */
   book(req: BookRequest): Booking {
     return this.bookWithin(req, true);
@@ -376,10 +335,8 @@ export class SchedulingEngine {
         throw new SlotUnavailable('that time is not offered for this service', 'not-offered');
       }
 
-      // Re-read inside the transaction. The availability the customer saw is
-      // already stale by the time they click.
-      // Both buffers count: the one this booking needs after itself, and the
-      // ones already held by the bookings around it.
+      // Re-read inside the transaction: what the customer saw is already stale.
+      // Both buffers count, this booking's and those held by its neighbours.
       const clash = this.busy(req.resourceId, req.startsAt, heldUntil)
         .some((b) => overlaps({ start: req.startsAt, end: heldUntil }, b));
       if (clash) throw new SlotUnavailable('that time was just taken');
@@ -427,17 +384,9 @@ export class SchedulingEngine {
   }
 
   /**
-   * Move a booking.
-   *
-   * One transaction and one row: the slot is re-derived, the clash re-checked,
-   * and the start and end updated in place. Nothing is cancelled and
-   * re-inserted, so there is no moment when the old appointment is gone and the
-   * new one has not landed — a reschedule that cannot land leaves the booking
-   * exactly as it was. Doing it as two calls means a failure between them
-   * leaves someone with nothing, which is worse than the failure they were
-   * trying to recover from.
-   *
-   * The row keeps its id and its token: the link in their email keeps working.
+   * Move a booking in one transaction by updating its row in place, never
+   * cancel-and-rebook: a move that cannot land leaves the booking exactly as it
+   * was. The row keeps its id and token, so emailed links keep working.
    */
   reschedule(
     token: string,
@@ -445,11 +394,7 @@ export class SchedulingEngine {
     ctx: {
       calendar: Calendar;
       service: Service;
-      /**
-       * Move to a different resource -- another practitioner, another room.
-       * `calendar` is then that resource's calendar. Omitted, the booking
-       * stays where it is.
-       */
+      /** Move to a different resource; `calendar` is then that resource's calendar. */
       resourceId?: string;
     },
   ): Booking {
@@ -476,16 +421,11 @@ export class SchedulingEngine {
         throw new SlotUnavailable('that time is not offered for this service', 'not-offered');
       }
 
-      // Everything the target resource holds except this booking itself,
-      // which is excluded by id: it is about to move, and it must not block
-      // its own new time.
+      // Exclude this booking by id so it does not block its own new time.
       const clash = this.held(resourceId, newStart, heldUntil, before.id)
         .some((b) => overlaps({ start: newStart, end: heldUntil }, b));
       if (clash) throw new SlotUnavailable('that time was just taken');
 
-      // One UPDATE of one row, resource included. There is no insert on the
-      // new resource and no cancel on the old one, so at no instant does the
-      // appointment exist twice or not at all.
       this.db
         .prepare(
           `UPDATE bookings
@@ -517,17 +457,13 @@ export class SchedulingEngine {
   }
 
   /**
-   * Cancel.
-   *
-   * The row is kept and marked, not deleted. A deleted booking loses the fact
-   * that it existed, and "was there ever an appointment?" is a question people
-   * ask precisely when something went wrong.
+   * Cancel. The row is marked, not deleted, so the fact that the appointment
+   * existed survives. Idempotent: a repeat changes and announces nothing.
    */
   cancel(token: string): Booking {
     const run = this.db.transaction((): Booking => {
       const existing = this.byToken(token);
       if (!existing) throw new BookingNotFound('no booking for that link');
-      // Repeating a cancellation changes nothing and announces nothing.
       if (existing.status === 'cancelled') return existing;
 
       const now = this.now();
@@ -542,11 +478,8 @@ export class SchedulingEngine {
   }
 
   /**
-   * Cancel a series from one occurrence onward: "stop the course here".
-   *
-   * One transaction, so the course is never half-cancelled. Earlier
-   * occurrences, attended or not, are left alone; so are ones already
-   * cancelled. Returns what this call cancelled.
+   * Cancel a series from one occurrence onward, in one transaction so the
+   * course is never half-cancelled. Returns what this call cancelled.
    */
   cancelSeriesFrom(seriesId: string, fromStartsAt: number): Booking[] {
     const run = this.db.transaction((): Booking[] => {
@@ -572,12 +505,8 @@ export class SchedulingEngine {
   }
 
   /**
-   * Book a recurring series, reporting per-occurrence outcomes.
-   *
-   * Partial success is the honest result and the useful one. Refusing the
-   * whole series because week six clashes with a public holiday helps nobody;
-   * silently dropping week six without saying so is worse. The caller gets
-   * both lists and decides.
+   * Book a recurring series. Partial success is reported rather than refused:
+   * the caller gets both the booked and the skipped occurrences.
    */
   bookSeries(
     occurrences: number[],
@@ -585,9 +514,8 @@ export class SchedulingEngine {
   ): { seriesId: string; booked: Booking[]; skipped: SkippedOccurrence[] } {
     const seriesId = this.newToken();
 
-    // One transaction around the whole series, each occurrence a savepoint
-    // inside it: an occurrence that cannot land rolls back alone, and the
-    // series -- with its outcome and its one message -- commits together.
+    // Each occurrence is a savepoint inside one transaction: a failed
+    // occurrence rolls back alone and the series commits with its one message.
     const run = this.db.transaction(() => {
       const booked: Booking[] = [];
       const skipped: SkippedOccurrence[] = [];
@@ -616,11 +544,8 @@ export class SchedulingEngine {
   }
 
   /**
-   * Bookings matching a filter, in start order.
-   *
-   * Cancelled rows are included unless `status` says otherwise: a front desk
-   * asking "what happened on Tuesday" needs to see the cancellations too, and
-   * hiding them by default is how a no-show gets mistaken for a gap.
+   * Bookings matching a filter, in start order. Cancelled rows are included
+   * unless `status` says otherwise, so a cancellation is not mistaken for a gap.
    */
   list(q: ListQuery = {}): Booking[] {
     const where: string[] = [];

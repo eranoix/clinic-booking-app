@@ -1,10 +1,7 @@
 /**
- * One engine and one catalogue per server process, on one SQLite file.
- *
- * The file is `web/data/clinic.db` unless CLINIC_DB points elsewhere. It is
- * created and seeded the first time anything asks for it, so a fresh clone
- * opens on a populated diary. `resetDemo()` (the admin's "Reset demo data",
- * and `npm run reset`) empties it and seeds it again.
+ * One engine and one catalogue per server process, on one SQLite file
+ * (`web/data/clinic.db` unless CLINIC_DB points elsewhere), created and seeded
+ * on first use.
  */
 import 'server-only';
 import fs from 'node:fs';
@@ -58,13 +55,10 @@ export function handles(): Handles {
 }
 
 /**
- * Empty the demo and seed it again, in place.
- *
- * In place rather than by deleting the file: a running server holds the file
- * open, and deleting it would leave that server reading a file nobody else
- * can see. Emptying the tables through SQL is visible to every connection.
- * The engine's tables are named by its exported schema; this is the one
- * place outside the engine that writes to them, and it only deletes.
+ * Empty the demo and seed it again, in place: a running server holds the file
+ * open, so deleting it would leave that server on an orphaned file. This is the
+ * only place outside the engine that writes the engine's tables, and it only
+ * deletes.
  */
 export function resetDemo(): { bookings: number } {
   const { catalog, file } = handles();

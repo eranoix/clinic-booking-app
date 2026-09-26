@@ -1,10 +1,8 @@
 /**
  * The admin session cookie: `v1.<expiry>.<signature>`, signed with HMAC-SHA256.
- *
- * Web Crypto only, so the same code runs in middleware and in route
- * handlers. The key is derived from ADMIN_PASSWORD (and SESSION_SECRET when
- * set): changing the password signs everyone out, and nothing about the
- * password is stored in the cookie.
+ * Web Crypto only, so it runs in middleware and route handlers. The key is
+ * derived from ADMIN_PASSWORD (and SESSION_SECRET when set), so changing the
+ * password signs everyone out and the cookie carries nothing about it.
  */
 export const SESSION_COOKIE = 'qp_admin';
 export const SESSION_HOURS = 12;

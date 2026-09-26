@@ -311,9 +311,8 @@ function ExceptionsSection({ member, exceptions, todayDate, onResult }: {
 
 /**
  * The slots a date would offer, computed in the browser by the engine's own
- * `slots()` -- the function `book()` checks against -- from the draft hours
- * and the bookings already in the diary. What it shows is what patients
- * would be offered, not an approximation of it.
+ * `slots()` (what `book()` checks against) from the draft hours and existing
+ * bookings, so the preview is exact.
  */
 function Preview({ member, services, saved, draft, dirty, todayDate }: {
   member: StaffMember;

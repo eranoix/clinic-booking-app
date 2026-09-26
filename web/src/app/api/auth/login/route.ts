@@ -10,11 +10,7 @@ function safeNext(raw: FormDataEntryValue | null): string {
   return /^\/admin(\/|\?|$)/.test(next) ? next : '/admin';
 }
 
-/**
- * A relative Location. Built from req.url it would carry the address the
- * server bound to -- http://0.0.0.0:3000 inside Docker -- not the one the
- * browser used.
- */
+/** A relative Location: built from req.url it would carry the bind address (0.0.0.0 in Docker). */
 const seeOther = (location: string) => new NextResponse(null, { status: 303, headers: { Location: location } });
 
 const secure = (req: NextRequest) =>

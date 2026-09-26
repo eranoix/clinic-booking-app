@@ -40,8 +40,7 @@ describe('booking', () => {
     const e = setup();
     const b = e.book(req(at('2026-03-02', '09:00')));
     expect(b.status).toBe('confirmed');
-    // Sequential ids in a URL let anyone enumerate other people's
-    // appointments, and the link has to work without a login.
+    // Sequential ids in a login-free URL would be enumerable.
     expect(b.publicToken).not.toBe(String(b.id));
     expect(e.byToken(b.publicToken)?.id).toBe(b.id);
   });
@@ -64,8 +63,6 @@ describe('booking', () => {
   });
 
   it('refuses a time the rules never offered', () => {
-    // Without this, a caller can post any instant and book outside opening
-    // hours entirely, bypassing the calendar.
     const e = setup();
     expect(() => e.book(req(at('2026-03-02', '22:00')))).toThrow(SlotUnavailable);
     expect(() => e.book(req(at('2026-03-03', '09:00')))).toThrow(SlotUnavailable);
@@ -100,8 +97,7 @@ describe('reschedule', () => {
   });
 
   it('leaves the original booking intact when the new time is taken', () => {
-    // A reschedule that cannot land must not destroy the appointment the
-    // person already had -- that is worse than the failure they were fixing.
+    // A reschedule that cannot land must leave the original booking intact.
     const e = setup();
     const mine = e.book(req(at('2026-03-02', '09:00'), 'Ana'));
     e.book(req(at('2026-03-02', '11:00'), 'Bo'));
@@ -135,8 +131,7 @@ describe('cancel', () => {
     e.cancel(b.publicToken);
 
     expect(e.byToken(b.publicToken)?.status).toBe('cancelled');
-    // The row is kept, not deleted: "was there ever an appointment?" is asked
-    // precisely when something has gone wrong.
+    // The row is kept, not deleted.
     expect(e.byToken(b.publicToken)).not.toBeNull();
     expect(() => e.book(req(at('2026-03-02', '09:00'), 'Bo'))).not.toThrow();
   });
@@ -151,8 +146,6 @@ describe('cancel', () => {
 
 describe('series', () => {
   it('books what it can and reports what it could not', () => {
-    // Refusing the whole series because week three clashes helps nobody;
-    // dropping week three silently is worse. The caller gets both lists.
     const e = setup();
     e.book(req(at('2026-03-16', '09:00'), 'Bo'));
 

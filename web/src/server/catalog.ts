@@ -1,32 +1,11 @@
 /**
- * The clinic's catalogue: staff, their weekly hours and date exceptions, and
- * the services offered.
+ * The clinic's catalogue: staff, weekly hours, date exceptions and services.
  *
- * Why this lives in the web app and not in the engine
- * ---------------------------------------------------
- * The engine's contract is that rules are VALUES passed into every call:
- * `available(resource, calendar, service, …)`, `book({ calendar, service, … })`.
- * That is what lets it be tested with no fixtures, and what lets a caller keep
- * its rules wherever suits it -- a config file, a CMS, another database. If
- * the engine owned a `services` table it would also have to own what a service
- * *is* to a business: a name, a description for patients, which practitioners
- * offer it. Those are this product's decisions, not scheduling ones, and a
- * second product would want different ones.
- *
- * What the engine does own is the one thing that must be written in the same
- * transaction as the conflict check: the booking. Everything here is read
- * before that transaction and handed in as a value, so keeping it in a
- * separate module costs no correctness.
- *
- * It does share the engine's SQLite file (a second connection; the engine
- * turns on WAL, so readers and the single writer do not block each other).
- * One file means one thing to back up and one thing to delete to reset the
- * demo. The table names are prefixed so they cannot collide with the engine's.
- *
- * Customers are deliberately absent. Booking needs no account, so the booking
- * row is the only place a customer is ever written; the engine derives the
- * customer list from it (`customers()`), and a second table here could only
- * drift out of step with that history.
+ * Lives outside the engine because the engine takes rules as values on every
+ * call; only the booking must be written in the conflict-check transaction.
+ * Shares the engine's SQLite file through a second connection (WAL, so readers
+ * and the writer do not block); table names are prefixed to avoid collisions.
+ * There is no customer table: the engine derives customers from bookings.
  */
 import 'server-only';
 import type Database from 'better-sqlite3';
@@ -124,7 +103,7 @@ export class Catalog {
   constructor(private readonly db: Database.Database) {
     db.pragma('foreign_keys = ON');
     db.exec(CATALOG_SCHEMA);
-    // Databases from before deactivation existed get the column, all active.
+    // Older databases lack `active`; add it with every row active.
     for (const table of ['clinic_staff', 'clinic_services']) {
       const cols = db.prepare<[], { name: string }>(`PRAGMA table_info(${table})`).all();
       if (!cols.some((c) => c.name === 'active')) {
@@ -156,8 +135,6 @@ export class Catalog {
   transaction<T>(fn: () => T): T {
     return this.db.transaction(fn).immediate();
   }
-
-  // -- staff and calendars ---------------------------------------------------
 
   staff(): StaffMember[] {
     const people = this.db.prepare<[], StaffRow>('SELECT id, name, role, hue, active FROM clinic_staff ORDER BY sort, name').all();
@@ -244,8 +221,6 @@ export class Catalog {
   removeException(staffId: string, date: string): void {
     this.db.prepare('DELETE FROM clinic_exceptions WHERE staff_id = ? AND date = ?').run(staffId, date);
   }
-
-  // -- services -------------------------------------------------------------
 
   services(): ServiceDef[] {
     const rows = this.db.prepare<[], ServiceRow>('SELECT * FROM clinic_services ORDER BY sort, name').all();

@@ -1,11 +1,7 @@
 /**
- * What the clinic would email, composed from the engine's booking events.
- *
- * The engine calls `compose` inside the transaction that makes each change and
- * writes the result to its outbox table in that same transaction (see
- * EngineOptions.outbox). This demo has no SMTP: the admin's Outbox page and
- * each patient's "view the email" page read the table instead. A real
- * deployment would add a worker that reads the outbox and sends.
+ * What the clinic would email, composed from the engine's booking events inside
+ * the transaction that makes each change (see EngineOptions.outbox). There is
+ * no SMTP here: the Outbox pages read the table instead.
  */
 import 'server-only';
 import type { Booking, BookingEvent, OutboxDraft, SkippedOccurrence } from 'clinic-booking-app';
@@ -13,11 +9,7 @@ import { CLINIC } from '@/lib/clinic';
 import { dayFull, dayShort, time } from '@/lib/time';
 import type { Catalog } from './catalog';
 
-/**
- * Where links in messages point. PUBLIC_URL when set (behind a proxy, in
- * Docker), else the local server on PORT -- the same default `next start`
- * listens on.
- */
+/** Where links in messages point: PUBLIC_URL when set, else the local server on PORT. */
 export function baseUrl(): string {
   const configured = process.env.PUBLIC_URL?.trim();
   if (configured) return configured.replace(/\/+$/, '');
@@ -97,7 +89,7 @@ export function composer(catalog: Catalog) {
       }
       case 'series-booked': {
         const [one] = event.booked;
-        if (!one) return null; // nothing booked, nothing to confirm
+        if (!one) return null;
         return {
           to: one.customerEmail,
           subject: `Your course: ${event.booked.length} ${serviceName(one.serviceId).toLowerCase()} sessions`,

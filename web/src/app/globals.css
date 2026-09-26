@@ -1,10 +1,8 @@
 @import "tailwindcss";
 
 /*
- * Quillmere's palette. Cool paper and slate ink; one accent, the blue of
- * kinesiology tape, used for the thing you can act on. Staff are told apart by
- * three quiet hues. Red is kept for errors only -- a cancellation is not an
- * error, so it is shown struck through in grey, not in red.
+ * One accent colour marks what can be acted on. Red is for errors only, so a
+ * cancellation is shown struck through in grey.
  */
 :root {
   --bg: #eff2f1;
@@ -161,11 +159,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/*
- * Times and counts. Lining figures only: Schibsted Grotesk's tabular set also
- * widens the colon, and "14 : 00" reads worse than a column that is a hair
- * uneven.
- */
+/* Lining figures, not tabular: this font's tabular set also widens the colon. */
 .tnum {
   font-variant-numeric: lining-nums;
 }

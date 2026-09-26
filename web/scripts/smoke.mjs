@@ -1,17 +1,11 @@
 /**
- * Walk the site against a running server, the way its users would.
+ * Walk the patient and front-desk flows against a running server.
  *
  *   node scripts/smoke.mjs http://127.0.0.1:3000                     # sign-in off
  *   node scripts/smoke.mjs http://127.0.0.1:3000 --password secret   # ADMIN_PASSWORD=secret
  *
- * Patient: find a free time, book it, lose a race for it, read the
- * confirmation email, open the manage link, move the appointment, cancel it.
- * Front desk: sign in (or confirm there is no sign-in), book for a patient,
- * move a booking to another practitioner, book a course and cancel the rest
- * of it, and find every one of those changes in the Outbox.
- *
- * Exits non-zero at the first step that does not behave. It writes real
- * bookings, to people at example.com.
+ * Exits non-zero at the first step that fails. Writes real bookings, to
+ * example.com addresses.
  */
 const args = process.argv.slice(2);
 const base = (args.find((a) => /^https?:/.test(a)) ?? 'http://127.0.0.1:3000').replace(/\/+$/, '');
@@ -56,8 +50,6 @@ async function firstFree(service, staff, from, rules = 'public') {
   return { status: 200, date: null, slots: [] };
 }
 
-// -- sign-in ------------------------------------------------------------------
-
 if (password) {
   const gate = await get('/admin');
   check(gate.status === 307 && /\/login/.test(gate.headers.get('location') ?? ''), 'the front desk asks for sign-in', gate.headers.get('location'));
@@ -77,8 +69,6 @@ if (password) {
   check(open.status === 200 && String(open.body).includes('no sign-in'), 'sign-in is off, and the admin says so');
 }
 check((await get('/admin')).status === 200, 'the front desk opens');
-
-// -- patient ------------------------------------------------------------------
 
 const service = 'follow-up';
 const days = await get(`/api/days?service=${service}&staff=any&days=21`);
@@ -127,8 +117,6 @@ check((await get('/b/not-a-real-token')).status === 404, 'an unknown link is a 4
 let box = await get(`/api/admin/outbox?booking=${booked.body.booking.id}`);
 const kinds = box.body.messages.map((m) => m.kind);
 check(kinds.join(',') === 'cancelled,rescheduled,booked', 'the Outbox has the confirmation, the move and one cancellation', kinds.join(', '));
-
-// -- front desk ----------------------------------------------------------------
 
 const deskFree = await firstFree(service, 'any', addDays(today, 1), 'desk');
 check(deskFree.slots.length > 0, 'the front desk sees free times', deskFree.date);

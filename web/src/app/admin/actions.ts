@@ -25,8 +25,6 @@ function asError(err: unknown): ActionState {
   throw err;
 }
 
-// -- bookings ---------------------------------------------------------------
-
 export async function rescheduleAction(_prev: ActionState, form: FormData): Promise<ActionState> {
   await requireAdmin();
   const id = Number(form.get('id'));
@@ -54,8 +52,6 @@ export async function cancelAction(form: FormData): Promise<void> {
   revalidatePath('/admin', 'layout');
   redirect(`/admin/bookings/${id}?done=cancelled`);
 }
-
-// -- availability -----------------------------------------------------------
 
 const HHMM = /^([01]\d|2[0-3]):[0-5]\d$/;
 
@@ -137,11 +133,8 @@ export async function busyAction(staffId: string, date: string) {
 }
 
 /**
- * Upcoming confirmed bookings that the current hours no longer cover.
- *
- * Changing hours never cancels anybody: a booking is a promise to a person,
- * and the diary does not break it silently. The front desk is told who is
- * affected so someone can call them.
+ * Upcoming confirmed bookings that the current hours no longer cover. Changing
+ * hours never cancels anybody; the front desk is told who is affected instead.
  */
 function outsideHours(staffId: string): BookingDTO[] {
   const member = catalog().member(staffId);
@@ -151,8 +144,6 @@ function outsideHours(staffId: string): BookingDTO[] {
     .filter((b) => !windowsForDate(member.calendar, dateOf(b.startsAt))
       .some((w) => w.start <= b.startsAt && b.endsAt <= w.end));
 }
-
-// -- services ---------------------------------------------------------------
 
 export interface ServiceResult {
   ok?: true;
@@ -208,8 +199,6 @@ export async function saveServiceAction(_prev: ServiceResult, form: FormData): P
   return { ok: true };
 }
 
-// -- course -----------------------------------------------------------------
-
 export async function cancelCourseAction(form: FormData): Promise<void> {
   await requireAdmin();
   const id = Number(form.get('id'));
@@ -217,8 +206,6 @@ export async function cancelCourseAction(form: FormData): Promise<void> {
   revalidatePath('/admin', 'layout');
   redirect(`/admin/bookings/${id}?done=course-cancelled&n=${cancelled.length}`);
 }
-
-// -- team -------------------------------------------------------------------
 
 export interface TeamResult {
   ok?: true;
@@ -279,8 +266,6 @@ export async function deleteStaffAction(form: FormData): Promise<void> {
   redirect('/admin/team?done=removed');
 }
 
-// -- service lifecycle ------------------------------------------------------
-
 export async function setServiceActiveAction(form: FormData): Promise<void> {
   await requireAdmin();
   const id = String(form.get('id') ?? '');
@@ -300,8 +285,6 @@ export async function deleteServiceAction(form: FormData): Promise<void> {
   revalidatePath('/book');
   redirect('/admin/services?done=removed');
 }
-
-// -- demo -------------------------------------------------------------------
 
 export async function resetAction(): Promise<void> {
   await requireAdmin();

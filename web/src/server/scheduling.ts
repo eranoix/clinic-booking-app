@@ -1,10 +1,7 @@
 /**
- * What the screens ask of the diary, in the clinic's vocabulary.
- *
- * Thin by design: every decision about whether a time can be booked is the
- * engine's. This module joins the engine's bookings to the catalogue's names,
- * merges several practitioners into one list of times for a patient who does
- * not mind who they see, and turns the engine's errors into sentences.
+ * What the screens ask of the diary. Thin by design: every decision about
+ * whether a time can be booked is the engine's; this joins names, merges
+ * practitioners for "anyone", and turns engine errors into sentences.
  */
 import 'server-only';
 import {
@@ -21,10 +18,8 @@ import { skipReason } from './mail';
 export const ANY = 'any';
 
 /**
- * Whose rules apply. Patients book within each service's notice period and
- * online horizon. The front desk, on the phone to someone, may book inside
- * the notice period and further ahead; opening hours, gaps and other
- * appointments bind them exactly as they bind everyone else.
+ * Whose rules apply. The front desk may book inside the notice period and
+ * beyond the online horizon; hours, gaps and other appointments bind everyone.
  */
 export type Rules = 'public' | 'desk';
 const DESK_HORIZON_DAYS = 366;
@@ -125,12 +120,8 @@ function practitioners(svc: ServiceDef, staffId: string): StaffMember[] {
 }
 
 /**
- * Bookable times in a window.
- *
- * With several practitioners, one time can be free with more than one of
- * them. Each time is listed once and given to the practitioner with the
- * least booked that day, so "anyone" spreads work instead of filling the
- * first diary in the list.
+ * Bookable times in a window. A time free with several practitioners is listed
+ * once and given to the one with the least booked that day, spreading work.
  */
 export function slotsBetween(serviceId: string, staffId: string, from: number, to: number, rules: Rules = 'public'): SlotDTO[] {
   const svc = requireService(serviceId, false);
@@ -175,11 +166,8 @@ export function dayCounts(serviceId: string, staffId: string, fromDate: string, 
 }
 
 /**
- * The free times closest to one that was just lost.
- *
- * Searched from the start of that day to a week later, ranked by distance
- * from the time they wanted, then shown in time order. The earlier part of
- * the same day counts: someone who wanted 15:00 may well take 14:00.
+ * The free times closest to one that was just lost: searched from the start of
+ * that day to a week later, ranked by distance, returned in time order.
  */
 export function alternatives(serviceId: string, staffId: string, wanted: number, rules: Rules = 'public', count = 3): SlotDTO[] {
   const { from } = dayBounds(dateOf(wanted));
@@ -240,11 +228,8 @@ export interface CourseResult {
 
 /**
  * A course of treatment: the first session and every `intervalWeeks` after,
- * `count` times, with the same practitioner at the same local time.
- *
- * Expanded by the engine's recurrence (walking the local calendar, so 09:00
- * stays 09:00 across a clock change) and booked by `bookSeries`, which books
- * what it can and reports what it could not.
+ * `count` times, same practitioner and local time. Books what it can and
+ * reports what it could not.
  */
 export function bookCourse(input: {
   serviceId: string; staffId: string; startsAt: number; name: string; email: string;

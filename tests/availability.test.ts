@@ -37,8 +37,6 @@ describe('windows', () => {
   });
 
   it('an open exception REPLACES the weekly rules for that date', () => {
-    // Opening one Saturday is the same shape of data as closing a Monday.
-    // Without this, a one-off opening has to be hacked in some other way.
     const c: Calendar = {
       ...cal,
       exceptions: [{
@@ -54,8 +52,6 @@ describe('windows', () => {
 
 describe('slot generation', () => {
   it('lays slots on the step, not on the duration', () => {
-    // A 50-minute service on a 60-minute step leaves a 10-minute gap between
-    // appointments by construction rather than by asking staff to remember.
     const s = slots({
       calendar: cal, service: svc,
       from: at('2026-03-02', '00:00'), to: at('2026-03-03', '00:00'),
@@ -121,8 +117,6 @@ describe('slot generation', () => {
 
 describe('boundaries', () => {
   it('treats touching intervals as not overlapping', () => {
-    // An appointment ending at 10:00 and one starting at 10:00 do not collide.
-    // Calling that a clash loses a slot per boundary, every day, invisibly.
     expect(overlaps({ start: 0, end: 10 }, { start: 10, end: 20 })).toBe(false);
     expect(overlaps({ start: 0, end: 11 }, { start: 10, end: 20 })).toBe(true);
   });
@@ -130,8 +124,7 @@ describe('boundaries', () => {
 
 describe('daylight saving', () => {
   it('keeps local opening hours across a spring-forward transition', () => {
-    // Lisbon moves on 2026-03-29. A rule saying 09:00 must still mean 09:00
-    // local on both sides; anything computed from a stored offset drifts.
+    // Lisbon moves its clocks on 2026-03-29; 09:00 must stay 09:00 local.
     const before = windowsForDate(cal, '2026-03-25')[0]!; // Wednesday
     const after = windowsForDate(cal, '2026-04-01')[0]!;  // Wednesday
     const hourInLisbon = (ts: number) =>
@@ -141,17 +134,14 @@ describe('daylight saving', () => {
 
     expect(hourInLisbon(before.start)).toBe('09');
     expect(hourInLisbon(after.start)).toBe('09');
-    // ...and they are NOT a whole number of 24-hour days apart, which is the
-    // thing a naive implementation assumes.
+    // ...and they are NOT a whole number of 24-hour days apart.
     expect((after.start - before.start) % 86_400_000).not.toBe(0);
   });
 });
 
 describe('regressions', () => {
   it('refuses a zero step instead of looping until memory runs out', () => {
-    // Found by an adversarial probe: `start += 0` never advanced and the
-    // process died allocating slots, with a stack trace pointing at the
-    // allocator rather than at the service definition that caused it.
+    // A zero step would never advance the generation loop.
     expect(() => slots({
       calendar: cal, service: { durationMin: 50, stepMin: 0 },
       from: at('2026-03-02', '00:00'), to: at('2026-03-03', '00:00'),

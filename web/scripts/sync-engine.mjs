@@ -1,14 +1,10 @@
 /**
  * Refresh the engine copy in web/node_modules after rebuilding it.
  *
- * web/ depends on the parent package as "file:..", installed as a real copy
- * (install-links=true in .npmrc) rather than a symlink. A copy is what lets
- * Next.js treat the engine and its native SQLite driver as ordinary external
- * packages under node_modules; a symlink resolves outside web/ and Next.js
- * would try to bundle the driver. The cost of a copy is that it does not see
- * later edits, so `npm run dev` and `npm run build` rebuild the engine and
- * copy dist/ and package.json across first. Dependencies are unaffected:
- * if the engine's dependencies change, run `npm install` here.
+ * The engine is installed as a real copy (install-links=true in .npmrc), not a
+ * symlink, so Next.js treats it and its native driver as external packages; a
+ * copy does not see later edits, hence this step. If the engine's
+ * dependencies change, run `npm install` here.
  */
 import fs from 'node:fs';
 import path from 'node:path';

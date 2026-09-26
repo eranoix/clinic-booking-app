@@ -1,5 +1,2 @@
-# `examples/` here is a program that runs: it is what `npm run demo` executes,
-# and the first thing the README tells you to run. Linguist treats examples/ as
-# documentation and leaves it out of the language count; that is right for a
-# directory of prose and wrong for an executable.
+# examples/ holds the runnable `npm run demo` program, so count it as code.
 examples/**   linguist-documentation=false

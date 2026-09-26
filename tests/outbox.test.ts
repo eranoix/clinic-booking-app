@@ -92,8 +92,6 @@ describe('outbox', () => {
   });
 
   it('rolls the change back when its message cannot be written', () => {
-    // The point of a transactional outbox: no booking without its
-    // confirmation, and no confirmation without its booking.
     const e = setup(() => { throw new Error('template broke'); });
     expect(() => e.book(req(at('2026-03-02', '09:00')))).toThrow('template broke');
     expect(e.list()).toHaveLength(0);

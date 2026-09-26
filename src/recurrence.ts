@@ -1,22 +1,10 @@
 /**
- * Recurrence, deliberately small.
+ * Recurrence: a deliberate subset of RFC 5545 (daily, weekly-by-weekday,
+ * monthly-by-day-of-month, count or until, exception dates).
  *
- * This covers daily, weekly-by-weekday and monthly-by-day-of-month, with a
- * count or an until, plus exception dates. That is a subset of RFC 5545, and
- * the subset is the point: the full specification includes rules almost nobody
- * schedules against, and every one of them is a branch that can be wrong.
- *
- * Two decisions worth stating, because both are where naive implementations
- * quietly produce the wrong answer:
- *
- *   Expansion walks the LOCAL calendar, not a fixed millisecond step. A weekly
- *   series across a daylight-saving boundary must keep landing at 09:00 local;
- *   adding 7 × 86_400_000 lands it at 08:00 or 10:00 and nobody notices until
- *   someone misses an appointment.
- *
- *   The 31st of a month that has 30 days is SKIPPED, not clamped to the 30th.
- *   Clamping silently invents an occurrence the person never asked for, and
- *   the difference shows up as a stranger in someone's calendar.
+ * Expansion walks the LOCAL calendar, not a fixed millisecond step, so a weekly
+ * series keeps landing at 09:00 local across a daylight-saving change. The 31st
+ * of a 30-day month is SKIPPED, not clamped, so no occurrence is invented.
  */
 
 import { dateInZone, weekdayInZone, zonedTimeToUtc } from './availability.js';
@@ -73,8 +61,6 @@ function addMonthsISO(dateISO: string, months: number, day: number): string | nu
   const ny = Math.floor(total / 12);
   const nm = total % 12;
   const daysInMonth = new Date(Date.UTC(ny, nm + 1, 0)).getUTCDate();
-  // The skip, not a clamp. A series on the 31st simply has no February
-  // occurrence; moving it to the 28th would invent one.
   if (day > daysInMonth) return null;
   return `${ny}-${String(nm + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
@@ -85,25 +71,17 @@ export class InvalidRule extends Error {
 }
 
 /**
- * Expand a rule into concrete instants.
- *
- * Bounded by `count`, `until` and `limit` — whichever comes first. A rule with
- * none of them is not an error but is capped by `limit`, because the failure
- * mode of an unbounded expansion is a process that stops responding rather
- * than one that reports a problem.
+ * Expand a rule into concrete instants, bounded by `count`, `until` and
+ * `limit`, whichever comes first. `limit` always applies, so an unbounded rule
+ * cannot hang the process.
  */
 
 export function expand(opts: ExpandOptions): number[] {
   const { rule, start, timeZone } = opts;
 
-  // A count of zero means zero occurrences. The first version pushed before
-  // checking the budget and returned one, which is the kind of off-by-one that
-  // shows up as a single unexplained appointment rather than as an error.
   if (rule.count != null && rule.count <= 0) return [];
 
-  // Out-of-range fields used to be accepted and produce dates by arithmetic --
-  // weekday 9 quietly became "two days into next week". A wrong answer
-  // delivered confidently is worse than a refusal.
+  // Refuse out-of-range fields rather than let arithmetic turn them into dates.
   for (const wd of rule.byWeekday ?? []) {
     if (!Number.isInteger(wd) || wd < 0 || wd > 6) {
       throw new InvalidRule(`byWeekday must be 0-6, got ${wd}`);
@@ -145,10 +123,8 @@ export function expand(opts: ExpandOptions): number[] {
       ? [...rule.byWeekday]
       : [weekdayInZone(start, timeZone)]).sort((a, b) => a - b);
 
-    // Walk from the Sunday of the start's week so every requested weekday in
-    // the first week is considered, including ones before the start date --
-    // they are filtered by the `ts < start` guard rather than by arithmetic
-    // that is easy to get off by one.
+    // Walk from the Sunday of the start's week; weekdays before the start date
+    // are dropped by the `ts < start` guard.
     const startWeekday = weekdayInZone(start, timeZone);
     let weekAnchor = addDaysISO(startDate, -startWeekday);
 
@@ -161,7 +137,6 @@ export function expand(opts: ExpandOptions): number[] {
     return out;
   }
 
-  // monthly
   const days = rule.byMonthDay?.length
     ? [...rule.byMonthDay].sort((a, b) => a - b)
     : [Number(startDate.split('-')[2])];

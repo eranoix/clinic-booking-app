@@ -9,9 +9,8 @@ export const metadata: Metadata = { title: 'Your messages', referrer: 'no-referr
 export const dynamic = 'force-dynamic';
 
 /**
- * The emails about one appointment, readable by whoever holds its link --
- * the same people who can already move or cancel it. This demo sends no
- * email, so this page is where a patient sees what they would have received.
+ * The emails about one appointment, readable by whoever holds its link (who
+ * can already move or cancel it). This demo sends no real email.
  */
 export default async function MailPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;

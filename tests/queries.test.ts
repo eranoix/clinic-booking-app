@@ -60,8 +60,6 @@ describe('list', () => {
   });
 
   it('includes cancellations unless asked not to', () => {
-    // "What happened on Tuesday" needs the cancellations too; hiding them by
-    // default is how a no-show gets mistaken for a gap.
     const e = setup();
     const a = e.book(req(at('2026-03-02', '09:00')));
     e.book(req(at('2026-03-02', '10:00'), 'Bo'));
@@ -178,8 +176,6 @@ describe('why a slot is unavailable', () => {
   });
 
   it('says "not-offered" when the rules never offered the time', () => {
-    // Offering "nearby alternatives" to a 22:00 request would answer a
-    // different question; the caller has to be able to tell the two apart.
     const e = setup();
     try {
       e.book(req(at('2026-03-02', '22:00')));
@@ -199,9 +195,7 @@ describe('why a slot is unavailable', () => {
 
 describe('availability entry point', () => {
   it('exposes the pure slot maths without the database', async () => {
-    // The admin previews the effect of an hours change in the browser with the
-    // same function the engine books with; that only works if importing it
-    // does not drag in the SQLite driver.
+    // The browser imports this entry point, so it must not pull in the SQLite driver.
     const mod = await import('../src/availability.js');
     expect(mod.slots).toBe(slots);
     const src = (await import('node:fs')).readFileSync(

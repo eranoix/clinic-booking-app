@@ -1,14 +1,8 @@
 #!/usr/bin/env node
 /**
- * npm run app -- from a fresh clone to a running site in one command.
- *
- * Installs what is missing (the engine's dependencies, then the site's),
- * builds the engine and the site, and starts the production server. Reads
- * .env at the repository root if there is one (see .env.example). Prints the
- * addresses to open. Ctrl+C stops the server.
- *
- * Nothing global is touched: everything lands in node_modules/, dist/,
- * web/node_modules/, web/.next/ and web/data/, all ignored by git.
+ * npm run app: install what is missing, build the engine and the site, and
+ * start the production server. Reads .env at the repository root if present.
+ * Touches nothing outside the repository's git-ignored build directories.
  */
 import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';

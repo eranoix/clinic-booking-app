@@ -57,7 +57,6 @@ export function DaySheet({ date, staff, bookings, now }: {
           );
         })}
 
-        {/* Ruler */}
         <div className="relative" style={{ height }} aria-hidden="true">
           {hours.filter((h) => !showNow || Math.abs(h - now) > 14 * MIN).map((h) => (
             <span
@@ -107,11 +106,9 @@ export function DaySheet({ date, staff, bookings, now }: {
 type Lane = 'full' | 'main' | 'side';
 
 /**
- * A cancelled appointment keeps its place on the sheet -- the front desk needs
- * to see that 10:30 was booked and fell through -- but a new booking can take
- * the same time. Where the two overlap, the live one takes the main lane and
- * the cancelled one moves to a narrow lane beside it, so neither covers the
- * other's text.
+ * A cancelled appointment keeps its place on the sheet, but a new booking can
+ * take the same time: the live one takes the main lane and the cancelled one a
+ * narrow lane beside it, so neither covers the other's text.
  */
 function lanes(list: BookingDTO[]): { b: BookingDTO; lane: Lane }[] {
   const live = list.filter((b) => b.status === 'confirmed');

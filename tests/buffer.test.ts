@@ -96,7 +96,7 @@ describe('an existing database', () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'se-'));
     const file = path.join(dir, 'old.db');
     try {
-      // The first release's table, without held_until.
+      // A table without held_until, as older databases have.
       const old = new Database(file);
       old.exec(`CREATE TABLE bookings (
         id INTEGER PRIMARY KEY AUTOINCREMENT, public_token TEXT NOT NULL UNIQUE,
