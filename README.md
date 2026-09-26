@@ -1,5 +1,7 @@
 # clinic-booking-app
 
+[![CI](https://github.com/eranoix/clinic-booking-app/actions/workflows/ci.yml/badge.svg)](https://github.com/eranoix/clinic-booking-app/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) ![node 22.12+](https://img.shields.io/badge/node-22.12%2B-339933?logo=nodedotjs&logoColor=white) ![Next.js 15](https://img.shields.io/badge/Next.js-15-000000?logo=nextdotjs&logoColor=white) ![docker compose one command](https://img.shields.io/badge/docker%20compose-one%20command-2496ED?logo=docker&logoColor=white)
+
 **Online booking for a clinic, with a page for patients and a front desk for staff.**
 
 *In plain words:* Booking an appointment by phone takes time for both the patient and the clinic. This app lets patients pick a free time online and get a link to change or cancel it later, with no account to create. Staff get a front desk screen to see the day, set working hours and handle bookings. The system makes sure two people can never book the same time slot.
