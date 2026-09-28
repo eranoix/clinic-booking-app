@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { resetAction } from './actions';
 
-/** Empty the demo and seed it again, after one explicit confirmation. */
 export function ResetButton() {
   const [asking, setAsking] = useState(false);
   if (!asking) {

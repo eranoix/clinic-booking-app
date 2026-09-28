@@ -4,7 +4,6 @@ import type { ApiError } from '@/lib/types';
 import { Unauthorized } from './auth';
 import { DiaryError } from './scheduling';
 
-/** Every public endpoint answers errors in one shape: `{ error: { code, message, alternatives? } }`. */
 export function failure(err: unknown): NextResponse<ApiError> {
   if (err instanceof Unauthorized) {
     return NextResponse.json({ error: { code: 'unauthorized', message: err.message } }, { status: 401 });

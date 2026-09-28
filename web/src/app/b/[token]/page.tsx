@@ -12,7 +12,6 @@ export default async function ManagePage({ params }: { params: Promise<{ token: 
   const { token } = await params;
   const booking = bookingByToken(token);
 
-  // A 404 status, not a 200 page that says so: the link is wrong, and tools should see that.
   if (!booking) notFound();
 
   const service = catalog().service(booking.serviceId);

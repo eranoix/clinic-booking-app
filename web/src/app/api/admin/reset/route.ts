@@ -5,7 +5,6 @@ import { failure } from '@/server/http';
 
 export const dynamic = 'force-dynamic';
 
-/** POST /api/admin/reset -- empty the demo and seed it again. */
 export async function POST() {
   try {
     await requireAdmin();

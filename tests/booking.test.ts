@@ -40,7 +40,6 @@ describe('booking', () => {
     const e = setup();
     const b = e.book(req(at('2026-03-02', '09:00')));
     expect(b.status).toBe('confirmed');
-    // Sequential ids in a login-free URL would be enumerable.
     expect(b.publicToken).not.toBe(String(b.id));
     expect(e.byToken(b.publicToken)?.id).toBe(b.id);
   });
@@ -53,8 +52,6 @@ describe('booking', () => {
   });
 
   it('refuses an overlapping slot even when the start differs', () => {
-    // A 50-minute appointment at 09:00 and one at 09:30 do not share a start,
-    // so a uniqueness constraint alone would let both through.
     const e = setup();
     e.book(req(at('2026-03-02', '09:00')));
     const overlapping = { ...req(at('2026-03-02', '09:30')),
@@ -91,13 +88,11 @@ describe('reschedule', () => {
     const moved = e.reschedule(b.publicToken, at('2026-03-02', '11:00'), { calendar: cal, service: svc });
 
     expect(moved.startsAt).toBe(at('2026-03-02', '11:00'));
-    // The token is preserved: the link already in their email keeps working.
     expect(moved.publicToken).toBe(b.publicToken);
     expect(e.byToken(b.publicToken)?.startsAt).toBe(at('2026-03-02', '11:00'));
   });
 
   it('leaves the original booking intact when the new time is taken', () => {
-    // A reschedule that cannot land must leave the original booking intact.
     const e = setup();
     const mine = e.book(req(at('2026-03-02', '09:00'), 'Ana'));
     e.book(req(at('2026-03-02', '11:00'), 'Bo'));
@@ -110,7 +105,6 @@ describe('reschedule', () => {
   });
 
   it('allows rescheduling onto its own current slot', () => {
-    // The booking must not be treated as a conflict with itself.
     const e = setup();
     const b = e.book(req(at('2026-03-02', '09:00')));
     expect(() => e.reschedule(b.publicToken, at('2026-03-02', '09:00'), { calendar: cal, service: svc }))
@@ -131,7 +125,6 @@ describe('cancel', () => {
     e.cancel(b.publicToken);
 
     expect(e.byToken(b.publicToken)?.status).toBe('cancelled');
-    // The row is kept, not deleted.
     expect(e.byToken(b.publicToken)).not.toBeNull();
     expect(() => e.book(req(at('2026-03-02', '09:00'), 'Bo'))).not.toThrow();
   });

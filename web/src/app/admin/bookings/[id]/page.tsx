@@ -27,15 +27,12 @@ export default async function BookingPage({ params, searchParams }: Props) {
   const live = b.status === 'confirmed' && !past;
   const done = typeof sp.done === 'string' ? sp.done : '';
 
-  // Who it can move to: anyone active who offers the service. Staying with
-  // the same person is the default when they are still taking bookings.
   const movable = catalog().staff().filter((s) => s.active && service?.staffIds.includes(s.id));
   const target = movable.find((s) => s.id === sp.staff)
     ?? movable.find((s) => s.id === b.staffId) ?? movable[0] ?? null;
   const firstDay = today(now);
   const bookingDay = dateOf(b.startsAt);
   const strip = live && target ? dayCounts(b.serviceId, target.id, firstDay, 14, 'desk') : [];
-  // Open on the booking's own day when it has room, else on the first day that does.
   const fallback = strip.find((d) => d.date === bookingDay && d.count > 0)?.date
     ?? strip.find((d) => d.count > 0)?.date ?? firstDay;
   const wanted = typeof sp.date === 'string' && isValidDate(sp.date) ? sp.date : fallback;

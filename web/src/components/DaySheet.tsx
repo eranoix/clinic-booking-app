@@ -7,11 +7,6 @@ import { EmptyState } from './ui';
 const PX_PER_MIN = 1.15;
 const MIN = 60_000;
 
-/**
- * The day as a clinic's paper day sheet: one column per practitioner, time
- * running down, appointments where they fall. Hatched where someone is not
- * working, so a gap you could fill looks different from a gap nobody can.
- */
 export function DaySheet({ date, staff, bookings, now }: {
   date: string;
   staff: StaffMember[];
@@ -28,7 +23,6 @@ export function DaySheet({ date, staff, bookings, now }: {
     return <EmptyState title="Nobody is working today">No one has opening hours on this date.</EmptyState>;
   }
 
-  // Whole hours either side, so the ruler starts and ends on a label.
   const hour = 60 * MIN;
   const start = midnight + Math.floor((earliest - midnight) / hour) * hour;
   const end = midnight + Math.ceil((latest - midnight) / hour) * hour;
@@ -105,11 +99,6 @@ export function DaySheet({ date, staff, bookings, now }: {
 
 type Lane = 'full' | 'main' | 'side';
 
-/**
- * A cancelled appointment keeps its place on the sheet, but a new booking can
- * take the same time: the live one takes the main lane and the cancelled one a
- * narrow lane beside it, so neither covers the other's text.
- */
 function lanes(list: BookingDTO[]): { b: BookingDTO; lane: Lane }[] {
   const live = list.filter((b) => b.status === 'confirmed');
   const gone = list.filter((b) => b.status === 'cancelled');

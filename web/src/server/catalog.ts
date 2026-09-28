@@ -1,12 +1,3 @@
-/**
- * The clinic's catalogue: staff, weekly hours, date exceptions and services.
- *
- * Lives outside the engine because the engine takes rules as values on every
- * call; only the booking must be written in the conflict-check transaction.
- * Shares the engine's SQLite file through a second connection (WAL, so readers
- * and the writer do not block); table names are prefixed to avoid collisions.
- * There is no customer table: the engine derives customers from bookings.
- */
 import 'server-only';
 import type Database from 'better-sqlite3';
 import type { Calendar, DateException, Service, WeeklyRule } from 'clinic-booking-app';
@@ -90,7 +81,6 @@ interface ServiceRow {
 
 export const HUES = ['blue', 'green', 'ochre', 'plum', 'slate'] as const;
 
-/** "Marta Quental" -> "marta-quental", made unique against the ids already taken. */
 function slugFor(name: string, taken: Set<string>): string {
   const base = name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'item';
@@ -103,7 +93,6 @@ export class Catalog {
   constructor(private readonly db: Database.Database) {
     db.pragma('foreign_keys = ON');
     db.exec(CATALOG_SCHEMA);
-    // Older databases lack `active`; add it with every row active.
     for (const table of ['clinic_staff', 'clinic_services']) {
       const cols = db.prepare<[], { name: string }>(`PRAGMA table_info(${table})`).all();
       if (!cols.some((c) => c.name === 'active')) {
@@ -112,7 +101,6 @@ export class Catalog {
     }
   }
 
-  /** Every catalogue row gone, ready for a fresh seed. Bookings are the engine's. */
   wipe(): void {
     this.db.transaction(() => {
       for (const t of ['clinic_service_staff', 'clinic_exception_windows', 'clinic_exceptions',
@@ -162,7 +150,6 @@ export class Catalog {
     return this.member(staffId)?.calendar ?? null;
   }
 
-  /** Exceptions with the free-text note the admin attached ("Training day"). */
   exceptionsOf(staffId: string): ExceptionWithNote[] {
     const windows = this.db.prepare<[string], WindowRow>(
       'SELECT * FROM clinic_exception_windows WHERE staff_id = ? ORDER BY opens',
@@ -189,12 +176,10 @@ export class Catalog {
     this.db.prepare('UPDATE clinic_staff SET active = ? WHERE id = ?').run(active ? 1 : 0, id);
   }
 
-  /** Only for someone with no bookings at all; the caller checks. */
   deleteStaff(id: string): void {
     this.db.prepare('DELETE FROM clinic_staff WHERE id = ?').run(id);
   }
 
-  /** Replace a person's whole weekly pattern in one transaction. */
   setWeeklyHours(staffId: string, rules: WeeklyRule[]): void {
     this.db.transaction(() => {
       this.db.prepare('DELETE FROM clinic_hours WHERE staff_id = ?').run(staffId);
@@ -203,7 +188,6 @@ export class Catalog {
     })();
   }
 
-  /** Add or replace the exception on one date. */
   putException(staffId: string, e: ExceptionWithNote): void {
     this.db.transaction(() => {
       this.db.prepare('DELETE FROM clinic_exceptions WHERE staff_id = ? AND date = ?').run(staffId, e.date);
@@ -246,7 +230,6 @@ export class Catalog {
     return this.services().find((s) => s.id === id) ?? null;
   }
 
-  /** A new service, with an id derived from its name. */
   addService(s: Omit<ServiceDef, 'id' | 'active'>): string {
     const taken = new Set(this.db.prepare<[], { id: string }>('SELECT id FROM clinic_services').all().map((r) => r.id));
     const id = slugFor(s.name, taken);
@@ -259,7 +242,6 @@ export class Catalog {
     this.db.prepare('UPDATE clinic_services SET active = ? WHERE id = ?').run(active ? 1 : 0, id);
   }
 
-  /** Only for a service never booked; the caller checks. */
   deleteService(id: string): void {
     this.db.prepare('DELETE FROM clinic_services WHERE id = ?').run(id);
   }
@@ -296,7 +278,6 @@ function toException(e: ExceptionRow, windows: WindowRow[]): DateException {
   };
 }
 
-/** The engine's view of a service: timing rules only. */
 export function engineService(s: ServiceDef): Service {
   return {
     durationMin: s.durationMin,

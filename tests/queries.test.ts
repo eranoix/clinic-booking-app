@@ -55,7 +55,6 @@ describe('list', () => {
     const tuesday = e.list({ from: at('2026-03-03', '00:00'), to: at('2026-03-04', '00:00') });
     expect(monday.map((b) => b.customerName)).toEqual(['Ana']);
     expect(tuesday.map((b) => b.customerName)).toEqual(['Bo']);
-    // A booking starting exactly at `to` belongs to the next window.
     expect(e.list({ from: at('2026-03-02', '00:00'), to: at('2026-03-03', '09:00') })).toHaveLength(1);
   });
 
@@ -156,7 +155,6 @@ describe('customers', () => {
     const cancelled = e.book(req(at('2026-03-02', '11:00'), 'Di'));
     e.cancel(cancelled.publicToken);
     clock = at('2026-03-02', '12:00');
-    // A cancelled visit is not a visit: Di has not been seen.
     expect(e.customers().map((c) => c.name)).toEqual(['Bo', 'Ana', 'Cy', 'Di']);
     expect(e.customers().find((c) => c.name === 'Di')?.lastSeenAt).toBeNull();
   });
@@ -195,7 +193,6 @@ describe('why a slot is unavailable', () => {
 
 describe('availability entry point', () => {
   it('exposes the pure slot maths without the database', async () => {
-    // The browser imports this entry point, so it must not pull in the SQLite driver.
     const mod = await import('../src/availability.js');
     expect(mod.slots).toBe(slots);
     const src = (await import('node:fs')).readFileSync(

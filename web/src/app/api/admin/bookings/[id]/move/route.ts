@@ -5,7 +5,6 @@ import { DiaryError, engine, reschedule } from '@/server/scheduling';
 
 export const dynamic = 'force-dynamic';
 
-/** POST /api/admin/bookings/:id/move { startsAt, staff? } -- new time, and optionally another practitioner, in one step. */
 export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
   try {
     await requireAdmin();

@@ -98,7 +98,6 @@ export function PersonCard({ person }: { person: Person }) {
   );
 }
 
-/** Deactivate, reactivate, or remove; remove only for someone with no bookings at all. */
 function Lifecycle({ person }: { person: Person }) {
   const [asking, setAsking] = useState(false);
   if (!person.active) {

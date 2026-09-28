@@ -18,8 +18,6 @@ export function ManageBooking({ initial, horizonDays, todayDate }: { initial: Bo
   const [notice, setNotice] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const noticeRef = useRef<HTMLParagraphElement>(null);
-  // Rendered on the server and again in the browser: compare against a clock
-  // read once, so both agree on whether the appointment has passed.
   const [now] = useState(() => Date.now());
 
   useEffect(() => { if (notice) noticeRef.current?.focus(); }, [notice]);

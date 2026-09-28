@@ -71,7 +71,6 @@ describe('outbox', () => {
       previous: { startsAt: at('2026-03-02', '09:00'), resourceId: 'dr-lee' },
       booking: { startsAt: at('2026-03-02', '11:00'), resourceId: 'dr-stone' },
     });
-    // Returning null writes nothing.
     expect(e.outbox()).toHaveLength(0);
   });
 
@@ -119,7 +118,7 @@ describe('series', () => {
     e.book(req(at('2026-03-09', '09:00'), 'Bo'));
     const { booked, skipped } = e.bookSeries(weekly(4), course);
     expect(booked).toHaveLength(2);
-    expect(skipped.map((s) => s.code)).toEqual(['taken', 'not-offered']); // 9 Mar taken, 16 Mar closed
+    expect(skipped.map((s) => s.code)).toEqual(['taken', 'not-offered']);
   });
 
   it('announces a series once, with both lists, not once per occurrence', () => {
@@ -144,12 +143,11 @@ describe('series', () => {
 
   it('cancels a course from one occurrence onward and leaves the earlier ones', () => {
     const e = setup();
-    const { seriesId, booked } = e.bookSeries(weekly(5), course); // 2, 9, 23, 30 Mar (16th closed)
+    const { seriesId, booked } = e.bookSeries(weekly(5), course);
     const cancelled = e.cancelSeriesFrom(seriesId, booked[2]!.startsAt);
     expect(cancelled.map((b) => b.startsAt)).toEqual([at('2026-03-23', '09:00'), at('2026-03-30', '09:00')]);
     expect(e.seriesOf(seriesId).map((b) => b.status)).toEqual(['confirmed', 'confirmed', 'cancelled', 'cancelled']);
     expect(e.outbox({ limit: 1 })[0]?.kind).toBe('series-cancelled');
-    // Nothing left to cancel: no second notice.
     expect(e.cancelSeriesFrom(seriesId, booked[2]!.startsAt)).toEqual([]);
     expect(e.outbox().filter((m) => m.kind === 'series-cancelled')).toHaveLength(1);
   });

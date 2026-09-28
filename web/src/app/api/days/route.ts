@@ -6,11 +6,9 @@ import { ANY, DiaryError, dayCounts } from '@/server/scheduling';
 
 export const dynamic = 'force-dynamic';
 
-/** GET /api/days?service=follow-up&staff=any&from=2026-10-01&days=14 -- free times per date. */
 export async function GET(req: NextRequest) {
   try {
     const q = req.nextUrl.searchParams;
-    // `rules=desk` is the front desk's view (no notice period, longer horizon).
     const rules = q.get('rules') === 'desk' ? 'desk' : 'public';
     if (rules === 'desk') await requireAdmin();
     const from = q.get('from') ?? today();

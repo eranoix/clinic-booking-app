@@ -1,13 +1,3 @@
-/**
- * A week at a clinic, end to end.
- *
- *   npm run demo
- *
- * Opening hours with a lunch break, a holiday closure, a one-off Saturday,
- * a recurring course of treatment, a double-booking attempt, a reschedule and
- * a cancellation.
- */
-
 import {
   SchedulingEngine, SlotUnavailable, expand, describe, zonedTimeToUtc,
   type Calendar, type Service,

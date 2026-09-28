@@ -11,11 +11,8 @@ export interface DaySummary {
   date: string;
   booked: number;
   cancelled: number;
-  /** Minutes of confirmed appointments. */
   bookedMin: number;
-  /** Minutes anyone is working, from the calendars. */
   openMin: number;
-  /** People working that day. */
   working: number;
 }
 
@@ -49,11 +46,9 @@ export function weekAhead(now = Date.now(), days = 7): DaySummary[] {
   });
 }
 
-/** The first bookable time for each service, with anyone who offers it. */
 export function nextFree(now = Date.now()): { serviceId: string; serviceName: string; durationMin: number; slot: SlotDTO | null }[] {
   return bookableServices().map((svc) => {
     let slot: SlotDTO | null = null;
-    // Look a week at a time rather than computing the whole horizon at once.
     for (let from = now; !slot && from < now + svc.maxAdvanceDays * DAY; from += 7 * DAY) {
       slot = slotsBetween(svc.id, ANY, from, from + 7 * DAY)[0] ?? null;
     }

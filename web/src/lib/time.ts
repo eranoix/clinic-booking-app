@@ -1,8 +1,3 @@
-/**
- * Formatting and calendar-date arithmetic in the clinic's zone. Browser-safe:
- * imports only the engine's pure availability entry point. Instants are UTC
- * epoch ms; a "date" is "YYYY-MM-DD" in the clinic's zone.
- */
 import { dateInZone, weekdayInZone, zonedTimeToUtc } from 'clinic-booking-app/availability';
 import { CLINIC } from './clinic';
 
@@ -28,14 +23,12 @@ export const weekdayShort = (ts: number) => weekdayShortFmt.format(ts);
 export const dayNum = (ts: number) => dayNumFmt.format(ts);
 export const monthShort = (ts: number) => monthShortFmt.format(ts);
 
-/** Noon is used to stand for a date: it exists on every day, DST or not. */
 export const noonOf = (date: string) => zonedTimeToUtc(date, '12:00', TZ);
 
 export const dateOf = (ts: number) => dateInZone(ts, TZ);
 export const today = (now = Date.now()) => dateOf(now);
 export const weekdayOf = (date: string) => weekdayInZone(noonOf(date), TZ);
 
-/** [start of date, start of next date) as instants. 23 or 25 hours on a transition. */
 export function dayBounds(date: string): { from: number; to: number } {
   return { from: zonedTimeToUtc(date, '00:00', TZ), to: zonedTimeToUtc(addDays(date, 1), '00:00', TZ) };
 }
@@ -54,19 +47,16 @@ export function daysBetween(a: string, b: string): number {
   return Math.round((toUtc(b) - toUtc(a)) / 86_400_000);
 }
 
-/** Monday of the week containing `date`. */
 export function mondayOf(date: string): string {
   const wd = weekdayOf(date);
   return addDays(date, -((wd + 6) % 7));
 }
 
-/** Minutes since local midnight, from "HH:MM". */
 export const minutesOf = (hhmm: string) => {
   const [h, m] = hhmm.split(':').map(Number) as [number, number];
   return h * 60 + m;
 };
 
-/** "Today", "Tomorrow", "Yesterday" or the short date. */
 export function relativeDay(ts: number, now = Date.now()): string {
   const diff = daysBetween(today(now), dateOf(ts));
   if (diff === 0) return 'Today';
@@ -75,7 +65,6 @@ export function relativeDay(ts: number, now = Date.now()): string {
   return dayShort(ts);
 }
 
-/** relativeDay for the middle of a sentence: "seen today", "next Mon 28 Sept". */
 export function relativeDayInline(ts: number, now = Date.now()): string {
   const r = relativeDay(ts, now);
   return ['Today', 'Tomorrow', 'Yesterday'].includes(r) ? r.toLowerCase() : r;
@@ -96,5 +85,4 @@ export function durationLabel(min: number): string {
 }
 
 export const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as const;
-/** Display order: the working week starts on Monday. */
 export const WEEK_ORDER = [1, 2, 3, 4, 5, 6, 0] as const;

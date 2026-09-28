@@ -37,7 +37,6 @@ export default async function ServicesPage({ searchParams }: { searchParams: Pro
 
       <section aria-labelledby="add-svc" className="mt-12">
         <SectionTitle id="add-svc">Add a service</SectionTitle>
-        {/* Keyed by the count, so the form empties itself once a service is added. */}
         <ServiceForm key={services.length} staff={staff} />
         <p className="mt-2 text-sm text-ink-3">A new service is offered as soon as it is added, by the practitioners ticked, within their hours.</p>
       </section>

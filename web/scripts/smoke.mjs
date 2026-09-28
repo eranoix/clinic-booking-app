@@ -1,12 +1,3 @@
-/**
- * Walk the patient and front-desk flows against a running server.
- *
- *   node scripts/smoke.mjs http://127.0.0.1:3000                     # sign-in off
- *   node scripts/smoke.mjs http://127.0.0.1:3000 --password secret   # ADMIN_PASSWORD=secret
- *
- * Exits non-zero at the first step that fails. Writes real bookings, to
- * example.com addresses.
- */
 const args = process.argv.slice(2);
 const base = (args.find((a) => /^https?:/.test(a)) ?? 'http://127.0.0.1:3000').replace(/\/+$/, '');
 const pwIndex = args.indexOf('--password');
@@ -38,7 +29,6 @@ const post = (path, body) => call(path, {
 const addDays = (date, n) => new Date(Date.parse(`${date}T12:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10);
 const today = new Date().toISOString().slice(0, 10);
 
-/** The first day from `from` with at least one free time, and its times. */
 async function firstFree(service, staff, from, rules = 'public') {
   const extra = rules === 'desk' ? '&rules=desk' : '';
   for (let i = 0; i < 45; i += 1) {
@@ -145,7 +135,6 @@ box = await get(`/api/admin/outbox?booking=${desk.body.booking.id}`);
 check(box.body.messages[0]?.kind === 'rescheduled' && box.body.messages[0].body.includes(`with ${move.body.booking.staffName}`),
   'the move notice names the new practitioner');
 
-// A weekly course with Marta, long enough to cross her training day.
 const courseFree = await firstFree(service, 'marta', addDays(today, 3), 'desk');
 const course = await post('/api/admin/bookings', {
   service, staff: 'marta', startsAt: courseFree.slots[0].start, name: 'Course Patient', email: 'course.patient@example.com',

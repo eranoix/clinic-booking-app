@@ -1,8 +1,3 @@
-/**
- * What the screens ask of the diary. Thin by design: every decision about
- * whether a time can be booked is the engine's; this joins names, merges
- * practitioners for "anyone", and turns engine errors into sentences.
- */
 import 'server-only';
 import {
   BookingNotFound, SlotUnavailable, expand, type Booking, type Interval, type Service,
@@ -17,10 +12,6 @@ import { skipReason } from './mail';
 
 export const ANY = 'any';
 
-/**
- * Whose rules apply. The front desk may book inside the notice period and
- * beyond the online horizon; hours, gaps and other appointments bind everyone.
- */
 export type Rules = 'public' | 'desk';
 const DESK_HORIZON_DAYS = 366;
 
@@ -67,7 +58,6 @@ export function toDTO(b: Booking, staff: StaffMember[], services: ServiceDef[]):
 
 const dto = (b: Booking) => toDTO(b, catalog().staff(), catalog().services());
 
-/** Bookings joined to names, for anything that renders a list. */
 export function bookings(q: Parameters<ReturnType<typeof engine>['list']>[0] = {}): BookingDTO[] {
   const staff = catalog().staff();
   const services = catalog().services();
@@ -84,7 +74,6 @@ export function bookingByToken(token: string): BookingDTO | null {
   return b ? dto(b) : null;
 }
 
-/** Services a patient can book: active, with at least one active practitioner. */
 export function bookableServices(): ServiceDef[] {
   const active = new Set(catalog().staff().filter((s) => s.active).map((s) => s.id));
   return catalog().services()
@@ -105,7 +94,6 @@ export function rulesFor(svc: ServiceDef, rules: Rules): Service {
   return rules === 'desk' ? { ...base, minNoticeMin: 0, maxAdvanceDays: Math.max(base.maxAdvanceDays ?? 0, DESK_HORIZON_DAYS) } : base;
 }
 
-/** The practitioners a request may use: one named person, or any active one who offers the service. */
 function practitioners(svc: ServiceDef, staffId: string): StaffMember[] {
   const all = catalog().staff().filter((s) => s.active && svc.staffIds.includes(s.id));
   if (staffId === ANY) return all;
@@ -119,10 +107,6 @@ function practitioners(svc: ServiceDef, staffId: string): StaffMember[] {
   return [one];
 }
 
-/**
- * Bookable times in a window. A time free with several practitioners is listed
- * once and given to the one with the least booked that day, spreading work.
- */
 export function slotsBetween(serviceId: string, staffId: string, from: number, to: number, rules: Rules = 'public'): SlotDTO[] {
   const svc = requireService(serviceId, false);
   const service = rulesFor(svc, rules);
@@ -154,7 +138,6 @@ export function slotsOn(serviceId: string, staffId: string, date: string, rules:
   return slotsBetween(serviceId, staffId, from, to, rules);
 }
 
-/** How many times are free on each of the next `days` dates, for the date strip. */
 export function dayCounts(serviceId: string, staffId: string, fromDate: string, days: number, rules: Rules = 'public'): { date: string; count: number }[] {
   const { from } = dayBounds(fromDate);
   const { to } = dayBounds(addDays(fromDate, days - 1));
@@ -165,10 +148,6 @@ export function dayCounts(serviceId: string, staffId: string, fromDate: string, 
   });
 }
 
-/**
- * The free times closest to one that was just lost: searched from the start of
- * that day to a week later, ranked by distance, returned in time order.
- */
 export function alternatives(serviceId: string, staffId: string, wanted: number, rules: Rules = 'public', count = 3): SlotDTO[] {
   const { from } = dayBounds(dateOf(wanted));
   try {
@@ -197,7 +176,6 @@ function checkPatient(nameIn: string, emailIn: string): { name: string; email: s
 
 export function book(input: {
   serviceId: string; staffId: string; startsAt: number; name: string; email: string;
-  /** What was chosen: a named practitioner, or ANY. Decides where alternatives come from. */
   preference?: string;
   rules?: Rules;
 }): BookingDTO {
@@ -226,11 +204,6 @@ export interface CourseResult {
   skipped: (SkippedOccurrence & { why: string })[];
 }
 
-/**
- * A course of treatment: the first session and every `intervalWeeks` after,
- * `count` times, same practitioner and local time. Books what it can and
- * reports what it could not.
- */
 export function bookCourse(input: {
   serviceId: string; staffId: string; startsAt: number; name: string; email: string;
   count: number; intervalWeeks: number; rules?: Rules;
@@ -297,7 +270,6 @@ export function cancel(token: string): BookingDTO {
   }
 }
 
-/** Cancel this session of a course and every later one. */
 export function cancelCourseFrom(bookingId: number): BookingDTO[] {
   const b = engine().byId(bookingId);
   if (!b) throw new DiaryError('not_found', 'That booking no longer exists.');
@@ -305,7 +277,6 @@ export function cancelCourseFrom(bookingId: number): BookingDTO[] {
   return engine().cancelSeriesFrom(b.seriesId, b.startsAt).map(dto);
 }
 
-/** Engine errors, as something a person can act on. */
 function explain(err: unknown, svc: ServiceDef, preference: string, wanted: number, staffName: string, rules: Rules): unknown {
   if (err instanceof SlotUnavailable) {
     const alts = alternatives(svc.id, preference, wanted, rules);
@@ -330,7 +301,6 @@ function explain(err: unknown, svc: ServiceDef, preference: string, wanted: numb
   return err;
 }
 
-/** Confirmed bookings of one practitioner on one date, as busy intervals. */
 export function busyOn(staffId: string, date: string): Interval[] {
   const { from, to } = dayBounds(date);
   return engine().busy(staffId, from, to);

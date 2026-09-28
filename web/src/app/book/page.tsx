@@ -9,14 +9,8 @@ export const dynamic = 'force-dynamic';
 
 type Search = Promise<Record<string, string | string[] | undefined>>;
 
-/**
- * `?service=massage&with=marta` preselects, so the clinic's own site can link
- * straight to "Book a sports massage with Marta".
- */
 export default async function BookPage({ searchParams }: { searchParams: Search }) {
   const sp = await searchParams;
-  // Only active services and practitioners are offered; a deactivated one's
-  // history stays in the admin, it just stops appearing here.
   const staff = catalog().staff().filter((s) => s.active).map((s) => ({ id: s.id, name: s.name, role: s.role, hue: s.hue }));
   const services = bookableServices();
   return (

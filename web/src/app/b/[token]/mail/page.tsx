@@ -8,10 +8,6 @@ import { engine } from '@/server/scheduling';
 export const metadata: Metadata = { title: 'Your messages', referrer: 'no-referrer' };
 export const dynamic = 'force-dynamic';
 
-/**
- * The emails about one appointment, readable by whoever holds its link (who
- * can already move or cancel it). This demo sends no real email.
- */
 export default async function MailPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
   const b = engine().byToken(token);

@@ -1,8 +1,3 @@
-/**
- * One engine and one catalogue per server process, on one SQLite file
- * (`web/data/clinic.db` unless CLINIC_DB points elsewhere), created and seeded
- * on first use.
- */
 import 'server-only';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -18,8 +13,6 @@ interface Handles {
   file: string;
 }
 
-// Survives module reloads in `next dev`, which would otherwise open a new
-// connection on every edit.
 const holder = globalThis as unknown as { __clinic?: Handles };
 
 export function dbFile(): string {
@@ -32,8 +25,6 @@ export function handles(): Handles {
   const file = dbFile();
   fs.mkdirSync(path.dirname(file), { recursive: true });
 
-  // The composer needs the catalogue for names; the catalogue's connection is
-  // opened second, so it joins a file the engine has already put in WAL mode.
   let compose: ((e: BookingEvent) => OutboxDraft | null) | null = null;
   const engine = new SchedulingEngine({ path: file, outbox: (e) => compose?.(e) ?? null });
   const catalogDb = new Database(file);
@@ -41,8 +32,6 @@ export function handles(): Handles {
   const catalog = new Catalog(catalogDb);
   compose = composer(catalog);
 
-  // Claim the seed inside an IMMEDIATE transaction so two processes starting
-  // at once (a dev server and a reset, say) cannot both seed.
   const mustSeed = catalog.transaction(() => {
     if (catalog.meta('seeded_at')) return false;
     catalog.setMeta('seeded_at', new Date().toISOString());
@@ -54,12 +43,6 @@ export function handles(): Handles {
   return holder.__clinic;
 }
 
-/**
- * Empty the demo and seed it again, in place: a running server holds the file
- * open, so deleting it would leave that server on an orphaned file. This is the
- * only place outside the engine that writes the engine's tables, and it only
- * deletes.
- */
 export function resetDemo(): { bookings: number } {
   const { catalog, file } = handles();
   const raw = new Database(file);

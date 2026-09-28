@@ -5,7 +5,6 @@ import { DiaryError, cancel, engine } from '@/server/scheduling';
 
 export const dynamic = 'force-dynamic';
 
-/** POST /api/admin/bookings/:id/cancel */
 export async function POST(_req: Request, ctx: { params: Promise<{ id: string }> }) {
   try {
     await requireAdmin();

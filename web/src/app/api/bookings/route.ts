@@ -4,12 +4,6 @@ import { ANY, book } from '@/server/scheduling';
 
 export const dynamic = 'force-dynamic';
 
-/**
- * POST /api/bookings
- * { service, staff, preference?, startsAt, name, email } -> 201 { booking, manageUrl }
- *
- * 409 slot_taken carries `alternatives`: the nearest times still free.
- */
 export async function POST(req: Request) {
   try {
     const body = await readJson(req);

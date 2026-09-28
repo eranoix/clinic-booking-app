@@ -14,11 +14,6 @@ function minuteOfDay(ts: number) {
   return h * 60 + m;
 }
 
-/**
- * Free times as a radio group, split into morning, afternoon and evening.
- * Native radios underneath, so arrow keys, focus and screen readers behave
- * the way they do everywhere else.
- */
 export function SlotGrid({ slots, value, onChange, name, showStaff = false, label }: {
   slots: SlotDTO[];
   value: number | null;

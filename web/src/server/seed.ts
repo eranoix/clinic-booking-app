@@ -1,10 +1,3 @@
-/**
- * First-run data: a small physiotherapy clinic and a few weeks of bookings
- * either side of today. Every booking goes through the engine's public API
- * with its clock set to when the booking would have been made, so the history
- * obeys the same rules as a live booking. Deterministic for a given start date.
- * Every name is invented and every email is @example.com.
- */
 import 'server-only';
 import { SchedulingEngine, SlotUnavailable, expand, type Calendar } from 'clinic-booking-app';
 import { windowsForDate, zonedTimeToUtc } from 'clinic-booking-app/availability';
@@ -22,8 +15,6 @@ const STAFF = [
   { id: 'marta', name: 'Marta Quental', role: 'Physiotherapist, sports injuries', hue: 'blue' as const },
   { id: 'tomas', name: 'Tomás Aragão', role: 'Physiotherapist, back and neck', hue: 'green' as const },
   { id: 'helena', name: 'Helena Brandt', role: 'Rehabilitation after surgery', hue: 'ochre' as const },
-  // Left the clinic a week ago: deactivated, not deleted, so their past
-  // appointments still say who treated whom.
   { id: 'rui', name: 'Rui Calado', role: 'Physiotherapist, sports massage', hue: 'plum' as const },
 ];
 const LEFT = new Set(['rui']);
@@ -90,7 +81,6 @@ const LAST = [
   'Quaresma', 'Rebelo', 'Salgueiro', 'Tavares', 'Ulrich', 'Valadares', 'Wendt', 'Xisto', 'Zagalo',
 ];
 
-/** mulberry32: tiny, seeded, good enough to vary a demo. */
 function rng(seedValue: number) {
   let a = seedValue >>> 0;
   return () => {
@@ -142,7 +132,6 @@ export function seed({ file, catalog, now }: { file: string; catalog: Catalog; n
   const regulars = people.slice(0, 18);
 
   let clock = now;
-  // Messages only for the last two days of activity, so the Outbox is not flooded.
   const compose = composer(catalog);
   const engine = new SchedulingEngine({
     path: file, now: () => clock, outbox: (e) => (clock >= now - 2 * DAY ? compose(e) : null),
@@ -150,7 +139,6 @@ export function seed({ file, catalog, now }: { file: string; catalog: Catalog; n
   const services = new Map(SERVICES.map((s) => [s.id, s]));
 
   try {
-    // Three courses of treatment, booked as weekly series three weeks ago.
     const courses = [
       { who: regulars[0]!, staff: 'tomas', service: 'follow-up', weekday: 2, time: '10:30' },
       { who: regulars[1]!, staff: 'helena', service: 'rehab', weekday: 3, time: '09:30' },
@@ -187,7 +175,6 @@ export function seed({ file, catalog, now }: { file: string; catalog: Catalog; n
     for (let offset = -21; offset <= 28; offset += 1) {
       const date = addDays(startDate, offset);
       const { from, to } = dayBounds(date);
-      // Busy in the past, filling up in the next few days, sparse further out.
       const target = offset <= 0 ? 0.72 : offset <= 3 ? 0.66 : offset <= 10 ? 0.45 : offset <= 20 ? 0.25 : 0.1;
 
       for (const staff of STAFF) {
@@ -202,8 +189,6 @@ export function seed({ file, catalog, now }: { file: string; catalog: Catalog; n
         for (let attempt = 0; attempt < 30 && bookedMin < openMin * target; attempt += 1) {
           const svc = services.get(weighted(offered.map((s) => s.id)))!;
           const firstStart = from + 6 * 3_600_000;
-          // When was this made? Somewhere inside the service's booking horizon
-          // and outside its notice period, and never in the future.
           const lo = firstStart - (svc.maxAdvanceDays - 1) * DAY;
           const hi = Math.min(now - 10 * MIN, firstStart - svc.minNoticeMin * MIN - 60 * MIN);
           if (lo > hi) continue;
@@ -244,7 +229,6 @@ export function seed({ file, catalog, now }: { file: string; catalog: Catalog; n
   for (const id of LEFT) catalog.setStaffActive(id, false);
 }
 
-/** Minutes open on a date, by the same rule the engine uses to offer slots. */
 function openMinutes(cal: Calendar, date: string): number {
   return windowsForDate(cal, date).reduce((n, w) => n + (w.end - w.start) / MIN, 0);
 }

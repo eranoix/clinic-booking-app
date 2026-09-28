@@ -32,7 +32,7 @@ describe('weekly', () => {
   it('expands every requested weekday', () => {
     const out = expand({
       rule: { frequency: 'weekly', byWeekday: [1, 3], count: 4 },
-      start: at('2026-03-02', '09:00'), timeZone: LISBON, // a Monday
+      start: at('2026-03-02', '09:00'), timeZone: LISBON,
     });
     expect(out.map(day)).toEqual(
       ['2026-03-02', '2026-03-04', '2026-03-09', '2026-03-11'],
@@ -58,7 +58,7 @@ describe('weekly', () => {
       start: at('2026-03-09', '09:00'), timeZone: LISBON,
     });
     expect(out.map(hour)).toEqual(['09', '09', '09', '09', '09', '09']);
-    expect(out.map(day)).toContain('2026-03-30'); // after the transition
+    expect(out.map(day)).toContain('2026-03-30');
   });
 });
 

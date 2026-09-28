@@ -46,7 +46,6 @@ describe('moving to another resource', () => {
     expect(moved).toMatchObject({
       id: b.id, publicToken: b.publicToken, resourceId: 'dr-stone', startsAt: at('2026-03-03', '10:00'),
     });
-    // Same time, other person: also a move.
     const same = e.reschedule(b.publicToken, at('2026-03-03', '10:00'), {
       calendar: tuesdays, service: svc, resourceId: 'dr-stone',
     });
@@ -69,7 +68,6 @@ describe('moving to another resource', () => {
   it('is checked against the new resource’s calendar, not the old one', () => {
     const e = engine();
     const b = e.book(req('dr-lee', mondays, at('2026-03-02', '09:00')));
-    // Monday is not in the Tuesday calendar.
     expect(() => e.reschedule(b.publicToken, at('2026-03-02', '10:00'), {
       calendar: tuesdays, service: svc, resourceId: 'dr-stone',
     })).toThrow(expect.objectContaining({ reason: 'not-offered' }));
@@ -89,8 +87,6 @@ describe('moving to another resource', () => {
   });
 
   it('loses cleanly to another connection that took the time first', () => {
-    // Two connections on one file: the second books the target time before
-    // the first moves a booking there.
     const file = tempFile();
     const desk = engine(file);
     const web = engine(file);
@@ -103,7 +99,6 @@ describe('moving to another resource', () => {
     expect(() => desk.reschedule(mine.publicToken, at('2026-03-02', '09:00'), {
       calendar: mondays, service: svc, resourceId: 'dr-stone',
     })).toThrow(SlotUnavailable);
-    // Nothing moved, nothing doubled: one booking each, where they were.
     const raw = new Database(file, { readonly: true });
     try {
       const rows = raw.prepare("SELECT resource_id, customer_name FROM bookings WHERE status = 'confirmed' ORDER BY id").all();
@@ -129,9 +124,6 @@ describe('moving to another resource', () => {
   });
 
   it('backs up the check with the unique index when a row arrives behind it', () => {
-    // Simulate the one race a single connection cannot see by planting the
-    // conflicting row directly, bypassing the engine's check: the database
-    // itself must still refuse two confirmed bookings at one start.
     const file = tempFile();
     const e = engine(file);
     const mine = e.book(req('dr-lee', mondays, at('2026-03-02', '09:00')));
@@ -139,7 +131,6 @@ describe('moving to another resource', () => {
     raw.prepare(`INSERT INTO bookings (public_token, resource_id, service_id, customer_name, customer_email,
       starts_at, ends_at, held_until, status, created_at, updated_at)
       VALUES ('planted', 'dr-stone', 'consult', 'Bo', 'bo@example.com', ?, ?, ?, 'confirmed', 0, 0)`)
-      // Zero length, so the overlap check cannot see it: only the index can.
       .run(at('2026-03-02', '10:00'), at('2026-03-02', '10:00'), at('2026-03-02', '10:00'));
     raw.close();
     expect(() => e.reschedule(mine.publicToken, at('2026-03-02', '10:00'), {

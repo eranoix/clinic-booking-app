@@ -3,11 +3,6 @@ import { dayFull, time } from '@/lib/time';
 
 const URL_RE = /(https?:\/\/[^\s]+)/g;
 
-/**
- * A message as the recipient would read it: plain text, with its links made
- * clickable. Links are the only thing turned into markup; everything else is
- * rendered as text, so nothing in a name or a note can become HTML.
- */
 export function MessageView({ message }: { message: OutboxMessage }) {
   return (
     <article className="panel overflow-hidden">
@@ -25,7 +20,6 @@ export function MessageView({ message }: { message: OutboxMessage }) {
   );
 }
 
-/** Absolute links to PUBLIC_URL are made relative, so the demo works on whatever address it is opened on. */
 function toLocal(href: string): string {
   try {
     const u = new URL(href);

@@ -18,7 +18,6 @@ function apply(choice: Choice) {
   }
 }
 
-/** Cycles system, light, dark. The label names the current state, not the next one. */
 export function ThemeToggle({ className = '' }: { className?: string }) {
   const [choice, setChoice] = useState<Choice>('system');
 

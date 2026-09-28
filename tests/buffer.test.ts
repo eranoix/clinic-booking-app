@@ -12,9 +12,6 @@ const LISBON = 'Europe/Lisbon';
 const at = (d: string, t: string) => zonedTimeToUtc(d, t, LISBON);
 
 const cal: Calendar = { timeZone: LISBON, weekly: [{ weekday: 1, start: '09:00', end: '12:00' }] };
-// 45 minutes with 15 kept clear afterwards, offered every quarter hour: the
-// grid alone would allow back-to-back appointments, so only the buffer can
-// keep them apart.
 const svc: Service = { durationMin: 45, stepMin: 15, bufferAfterMin: 15 };
 const NOW = at('2026-03-01', '08:00');
 
@@ -41,8 +38,6 @@ describe('buffer after', () => {
   });
 
   it('is enforced by book(), not only hidden by available()', () => {
-    // A caller posting 09:45 directly must be refused just as if it had
-    // picked it from the list.
     const e = setup();
     e.book(req(at('2026-03-02', '09:00')));
     expect(() => e.book(req(at('2026-03-02', '09:45')))).toThrow(SlotUnavailable);
@@ -52,7 +47,6 @@ describe('buffer after', () => {
   it('gives the same answer whichever booking was made first', () => {
     const e = setup();
     e.book(req(at('2026-03-02', '09:45')));
-    // 09:00 would end at 09:45 and need until 10:00 clear.
     expect(() => e.book(req(at('2026-03-02', '09:00')))).toThrow(SlotUnavailable);
     expect(() => e.book(req(at('2026-03-02', '10:45')))).not.toThrow();
   });
@@ -68,8 +62,6 @@ describe('buffer after', () => {
   it('sees a booking just past the window when the last slot’s buffer would reach it', () => {
     const e = setup();
     e.book(req(at('2026-03-02', '10:00')));
-    // 09:00-09:45 plus its buffer runs to 10:00: touching, allowed.
-    // 09:15-10:00 plus its buffer runs to 10:15: clashes with 10:00.
     const free = e.available('dr-lee', cal, svc, at('2026-03-02', '09:00'), at('2026-03-02', '10:00'))
       .map((s) => s.start);
     expect(free).toEqual([at('2026-03-02', '09:00')]);
@@ -96,7 +88,6 @@ describe('an existing database', () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'se-'));
     const file = path.join(dir, 'old.db');
     try {
-      // A table without held_until, as older databases have.
       const old = new Database(file);
       old.exec(`CREATE TABLE bookings (
         id INTEGER PRIMARY KEY AUTOINCREMENT, public_token TEXT NOT NULL UNIQUE,
@@ -114,7 +105,6 @@ describe('an existing database', () => {
       expect(engine.busy('dr-lee', at('2026-03-02', '00:00'), at('2026-03-03', '00:00')))
         .toEqual([{ start: at('2026-03-02', '09:00'), end: at('2026-03-02', '09:45') }]);
       expect(engine.byToken('t1')?.status).toBe('confirmed');
-      // New bookings hold their buffer as usual.
       engine.book(req(at('2026-03-02', '10:00')));
       expect(() => engine!.book(req(at('2026-03-02', '10:45')))).toThrow(SlotUnavailable);
     } finally {

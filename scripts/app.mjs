@@ -1,9 +1,4 @@
 #!/usr/bin/env node
-/**
- * npm run app: install what is missing, build the engine and the site, and
- * start the production server. Reads .env at the repository root if present.
- * Touches nothing outside the repository's git-ignored build directories.
- */
 import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import net from 'node:net';
@@ -20,7 +15,6 @@ if (major < 22 || (major === 22 && minor < 12)) {
   process.exit(1);
 }
 
-// .env at the root, without overriding anything already set in the shell.
 const envFile = path.join(root, '.env');
 if (fs.existsSync(envFile)) {
   for (const line of fs.readFileSync(envFile, 'utf8').split(/\r?\n/)) {

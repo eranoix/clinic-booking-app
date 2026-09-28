@@ -1,15 +1,8 @@
-/**
- * The admin session cookie: `v1.<expiry>.<signature>`, signed with HMAC-SHA256.
- * Web Crypto only, so it runs in middleware and route handlers. The key is
- * derived from ADMIN_PASSWORD (and SESSION_SECRET when set), so changing the
- * password signs everyone out and the cookie carries nothing about it.
- */
 export const SESSION_COOKIE = 'qp_admin';
 export const SESSION_HOURS = 12;
 
 const enc = new TextEncoder();
 
-/** Sign-in is on only when ADMIN_PASSWORD is set to something. */
 export function adminPassword(): string | null {
   const p = process.env.ADMIN_PASSWORD;
   return p && p.length > 0 ? p : null;
@@ -33,7 +26,6 @@ async function sign(payload: string, password: string): Promise<string> {
   return b64url(await crypto.subtle.sign('HMAC', await key(password), enc.encode(payload)));
 }
 
-/** Compare without stopping at the first difference, so timing says nothing. */
 export function constantTimeEqual(a: string, b: string): boolean {
   const x = enc.encode(a);
   const y = enc.encode(b);

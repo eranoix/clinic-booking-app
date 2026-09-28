@@ -4,7 +4,6 @@ import { DiaryError, bookingByToken } from '@/server/scheduling';
 
 export const dynamic = 'force-dynamic';
 
-/** GET /api/bookings/:token -- the booking behind a manage link. */
 export async function GET(_req: Request, ctx: { params: Promise<{ token: string }> }) {
   try {
     const { token } = await ctx.params;

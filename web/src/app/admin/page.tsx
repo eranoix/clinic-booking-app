@@ -14,8 +14,6 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   const everyone = catalog().staff();
   const hue = new Map(everyone.map((s) => [s.id, s.hue]));
   const day = agenda(date);
-  // The sheet shows who is taking bookings, plus anyone former who still has
-  // an appointment today.
   const staff = everyone.filter((s) => s.active || day.some((b) => b.staffId === s.id));
   const confirmed = day.filter((b) => b.status === 'confirmed');
   const cancelled = day.length - confirmed.length;
@@ -53,7 +51,6 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
         <div className="hidden md:block">
           <DaySheet date={date} staff={staff} bookings={day} now={now} />
         </div>
-        {/* The same agenda as a list: on a phone, and for anyone reading rather than scanning. */}
         <ol className="panel divide-y divide-line-2 md:hidden">
           {day.length === 0 ? <li className="p-4 text-ink-2">No appointments today.</li> : null}
           {day.map((b) => (

@@ -1,4 +1,3 @@
-/** The clinic's mark: a strip of tape across a rounded square. */
 export function Mark({ size = 28 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 28 28" aria-hidden="true">

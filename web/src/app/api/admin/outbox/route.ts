@@ -5,7 +5,6 @@ import { engine } from '@/server/scheduling';
 
 export const dynamic = 'force-dynamic';
 
-/** GET /api/admin/outbox?to=&booking=&series=&limit= -- the messages the clinic would have sent, newest first. */
 export async function GET(req: NextRequest) {
   try {
     await requireAdmin();

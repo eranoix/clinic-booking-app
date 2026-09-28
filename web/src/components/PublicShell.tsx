@@ -3,7 +3,6 @@ import { CLINIC } from '@/lib/clinic';
 import { Mark } from './Mark';
 import { ThemeToggle } from './ThemeToggle';
 
-/** Header and footer for the pages patients see. */
 export function PublicShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-dvh flex-col">

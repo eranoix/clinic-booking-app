@@ -1,11 +1,3 @@
-/**
- * Booking under concurrency. Availability is advice and the write is the
- * authority: the conflict check re-reads what is booked inside the same
- * transaction as the insert, since check-then-insert is the classic
- * double-booking race. An identical start instant is also refused by the
- * partial unique index; partial overlaps are caught by the explicit check.
- */
-
 import Database from 'better-sqlite3';
 import type { Database as Db } from 'better-sqlite3';
 import { overlaps, slots, type Calendar, type Interval, type Service } from './availability.js';
@@ -61,11 +53,6 @@ export type BookingStatus = 'confirmed' | 'cancelled';
 
 export interface Booking {
   id: number;
-  /**
-   * Unguessable id used in reschedule and cancel links. Separate from the
-   * numeric id because the links work without a login, and a sequential id
-   * would let anyone enumerate other people's appointments.
-   */
   publicToken: string;
   resourceId: string;
   serviceId: string;
@@ -94,13 +81,6 @@ interface Row {
   updated_at: number;
 }
 
-/**
- * Why a slot could not be taken. `taken`: the rules offer that time but a
- * confirmed booking now occupies it, so nearby alternatives are worth showing.
- * `not-offered`: the rules never offered it (outside hours, too soon, too far
- * ahead, off the grid). A field rather than subclasses, so
- * `instanceof SlotUnavailable` catches both.
- */
 export type SlotUnavailableReason = 'taken' | 'not-offered';
 
 export class SlotUnavailable extends Error {
@@ -127,56 +107,36 @@ export interface BookRequest {
   seriesId?: string;
 }
 
-/**
- * Filter for {@link SchedulingEngine.list}. Every field narrows; none is
- * required. `from`/`to` select by START time, half-open: `[from, to)`, so the
- * bookings "on" a day are exactly those starting between its two midnights and
- * a day boundary never counts one twice.
- */
 export interface ListQuery {
   from?: number;
   to?: number;
   resourceId?: string;
   serviceId?: string;
   status?: BookingStatus;
-  /** Matched case-insensitively: Ana@Example.com and ana@example.com are one person. */
   customerEmail?: string;
-  /** Newest first instead of oldest first. */
   order?: 'asc' | 'desc';
   limit?: number;
 }
 
-/**
- * One person, as seen through their bookings. There is no customer table
- * (booking needs no account), so a customer is derived by grouping on the
- * lower-cased email and cannot drift out of step with its history.
- */
 export interface CustomerSummary {
-  /** Lower-cased: the grouping key. */
   email: string;
-  /** The name on their most recent booking; people correct typos over time. */
   name: string;
   total: number;
   confirmed: number;
   cancelled: number;
-  /** Confirmed bookings starting after now. */
   upcoming: number;
   firstStartsAt: number;
   lastStartsAt: number;
-  /** Start of the next confirmed booking after now, if any. */
   nextStartsAt: number | null;
-  /** Start of the most recent confirmed booking at or before now, if any. */
   lastSeenAt: number | null;
 }
 
-/** An occurrence of a series that could not be booked, and why. */
 export interface SkippedOccurrence {
   startsAt: number;
   reason: string;
   code: SlotUnavailableReason;
 }
 
-/** Something that happened to a booking, as handed to the outbox composer. */
 export type BookingEvent =
   | { kind: 'booked'; booking: Booking }
   | {
@@ -188,7 +148,6 @@ export type BookingEvent =
   | { kind: 'series-booked'; seriesId: string; booked: Booking[]; skipped: SkippedOccurrence[] }
   | { kind: 'series-cancelled'; seriesId: string; cancelled: Booking[] };
 
-/** A message the composer wants written. */
 export interface OutboxDraft {
   to: string;
   subject: string;
@@ -207,20 +166,9 @@ export interface EngineOptions {
   path?: string;
   now?: () => number;
   newToken?: () => string;
-  /**
-   * Turn a change into messages, or return null for none. Transactional
-   * outbox: the composer runs inside the transaction that makes the change and
-   * its drafts are written in that same transaction, so a message exists
-   * exactly when its change committed. If the composer throws, the change rolls
-   * back. Delivery is someone else's job.
-   */
   outbox?: (event: BookingEvent) => OutboxDraft | OutboxDraft[] | null;
 }
 
-/**
- * Add `held_until` to databases created without it. Old rows have no record of
- * their service's buffer, so they are backfilled with their own end.
- */
 function migrate(db: Db): void {
   const columns = db.prepare<[], { name: string }>('PRAGMA table_info(bookings)').all();
   if (!columns.some((c) => c.name === 'held_until')) {
@@ -247,7 +195,6 @@ export class SchedulingEngine {
     this.compose = opts.outbox;
   }
 
-  /** Write the composer's messages for an event. Call only inside a transaction. */
   private emit(event: BookingEvent): void {
     if (!this.compose) return;
     const drafts = this.compose(event);
@@ -267,11 +214,6 @@ export class SchedulingEngine {
     this.db.close();
   }
 
-  /**
-   * Time a resource cannot offer, from confirmed bookings overlapping a window.
-   * Each interval runs to the end of the booking's buffer: the buffer is held
-   * by the booking that needs it, so the gap does not depend on booking order.
-   */
   busy(resourceId: string, from: number, to: number): Interval[] {
     return this.held(resourceId, from, to, -1);
   }
@@ -287,7 +229,6 @@ export class SchedulingEngine {
       .map((r) => ({ start: r.starts_at, end: r.held_until }));
   }
 
-  /** What a customer may choose from. Advice, not a reservation. */
   available(
     resourceId: string,
     calendar: Calendar,
@@ -295,8 +236,6 @@ export class SchedulingEngine {
     from: number,
     to: number,
   ): Interval[] {
-    // A slot near the end of the window holds its buffer past `to`, so the
-    // bookings that buffer could run into are read that far too.
     const bufferMs = (service.bufferAfterMin ?? 0) * 60_000;
     return slots({
       calendar, service, from, to,
@@ -305,11 +244,6 @@ export class SchedulingEngine {
     });
   }
 
-  /**
-   * Take a slot. One transaction re-derives the slot from the rules, re-reads
-   * what is booked, checks for an overlap and inserts, so a slot taken since it
-   * was offered is refused here.
-   */
   book(req: BookRequest): Booking {
     return this.bookWithin(req, true);
   }
@@ -321,8 +255,6 @@ export class SchedulingEngine {
     const heldUntil = endsAt + (req.service.bufferAfterMin ?? 0) * 60_000;
 
     const run = this.db.transaction((): Row => {
-      // Is this a slot the rules actually offer? Without this, a caller can
-      // post any instant and book outside opening hours entirely.
       const offered = slots({
         calendar: req.calendar,
         service: req.service,
@@ -335,8 +267,6 @@ export class SchedulingEngine {
         throw new SlotUnavailable('that time is not offered for this service', 'not-offered');
       }
 
-      // Re-read inside the transaction: what the customer saw is already stale.
-      // Both buffers count, this booking's and those held by its neighbours.
       const clash = this.busy(req.resourceId, req.startsAt, heldUntil)
         .some((b) => overlaps({ start: req.startsAt, end: heldUntil }, b));
       if (clash) throw new SlotUnavailable('that time was just taken');
@@ -362,13 +292,8 @@ export class SchedulingEngine {
     });
 
     try {
-      // IMMEDIATE takes the write lock before the read, so another connection
-      // cannot commit between the conflict check and the insert: it waits.
-      // Inside an outer transaction (a series) this is a savepoint instead.
       return toBooking(this.db.inTransaction ? run() : run.immediate());
     } catch (err) {
-      // The unique index is the backstop for the race the transaction cannot
-      // see: another connection committing between our read and our insert.
       if (err instanceof Error && /UNIQUE constraint/i.test(err.message)) {
         throw new SlotUnavailable('that time was just taken');
       }
@@ -383,18 +308,12 @@ export class SchedulingEngine {
     return row ? toBooking(row) : null;
   }
 
-  /**
-   * Move a booking in one transaction by updating its row in place, never
-   * cancel-and-rebook: a move that cannot land leaves the booking exactly as it
-   * was. The row keeps its id and token, so emailed links keep working.
-   */
   reschedule(
     token: string,
     newStart: number,
     ctx: {
       calendar: Calendar;
       service: Service;
-      /** Move to a different resource; `calendar` is then that resource's calendar. */
       resourceId?: string;
     },
   ): Booking {
@@ -403,8 +322,6 @@ export class SchedulingEngine {
 
     const run = this.db.transaction((): Row => {
       const now = this.now();
-      // Read the booking inside the transaction too: a cancellation that
-      // lands first must win, not be overwritten by a move.
       const before = this.db
         .prepare<[string], Row>('SELECT * FROM bookings WHERE public_token = ?')
         .get(token);
@@ -421,7 +338,6 @@ export class SchedulingEngine {
         throw new SlotUnavailable('that time is not offered for this service', 'not-offered');
       }
 
-      // Exclude this booking by id so it does not block its own new time.
       const clash = this.held(resourceId, newStart, heldUntil, before.id)
         .some((b) => overlaps({ start: newStart, end: heldUntil }, b));
       if (clash) throw new SlotUnavailable('that time was just taken');
@@ -456,10 +372,6 @@ export class SchedulingEngine {
     }
   }
 
-  /**
-   * Cancel. The row is marked, not deleted, so the fact that the appointment
-   * existed survives. Idempotent: a repeat changes and announces nothing.
-   */
   cancel(token: string): Booking {
     const run = this.db.transaction((): Booking => {
       const existing = this.byToken(token);
@@ -477,10 +389,6 @@ export class SchedulingEngine {
     return run.immediate();
   }
 
-  /**
-   * Cancel a series from one occurrence onward, in one transaction so the
-   * course is never half-cancelled. Returns what this call cancelled.
-   */
   cancelSeriesFrom(seriesId: string, fromStartsAt: number): Booking[] {
     const run = this.db.transaction((): Booking[] => {
       const now = this.now();
@@ -504,18 +412,12 @@ export class SchedulingEngine {
     return run.immediate();
   }
 
-  /**
-   * Book a recurring series. Partial success is reported rather than refused:
-   * the caller gets both the booked and the skipped occurrences.
-   */
   bookSeries(
     occurrences: number[],
     req: Omit<BookRequest, 'startsAt' | 'seriesId'>,
   ): { seriesId: string; booked: Booking[]; skipped: SkippedOccurrence[] } {
     const seriesId = this.newToken();
 
-    // Each occurrence is a savepoint inside one transaction: a failed
-    // occurrence rolls back alone and the series commits with its one message.
     const run = this.db.transaction(() => {
       const booked: Booking[] = [];
       const skipped: SkippedOccurrence[] = [];
@@ -543,10 +445,6 @@ export class SchedulingEngine {
     return row ? toBooking(row) : null;
   }
 
-  /**
-   * Bookings matching a filter, in start order. Cancelled rows are included
-   * unless `status` says otherwise, so a cancellation is not mistaken for a gap.
-   */
   list(q: ListQuery = {}): Booking[] {
     const where: string[] = [];
     const args: (string | number)[] = [];
@@ -562,7 +460,6 @@ export class SchedulingEngine {
     if (q.limit != null && (!Number.isInteger(q.limit) || q.limit < 0)) {
       throw new RangeError(`limit must be a non-negative integer, got ${q.limit}`);
     }
-    // Only fixed fragments are concatenated; every value is a bound parameter.
     const sql = `SELECT * FROM bookings
       ${where.length ? `WHERE ${where.join(' AND ')}` : ''}
       ORDER BY starts_at ${q.order === 'desc' ? 'DESC' : 'ASC'}, id
@@ -570,7 +467,6 @@ export class SchedulingEngine {
     return this.db.prepare<typeof args, Row>(sql).all(...args).map(toBooking);
   }
 
-  /** Everyone who has ever booked: most recently seen first, then people not yet seen. */
   customers(): CustomerSummary[] {
     const now = this.now();
     const rows = this.db
@@ -603,12 +499,10 @@ export class SchedulingEngine {
     }));
   }
 
-  /** Messages written by the outbox composer, newest first. */
   outbox(q: { limit?: number; to?: string; bookingId?: number; seriesId?: string } = {}): OutboxMessage[] {
     const where: string[] = [];
     const args: (string | number)[] = [];
     if (q.to != null) { where.push('lower(recipient) = lower(?)'); args.push(q.to); }
-    // Given both, either matches: a booking's own messages and its course's.
     const about: string[] = [];
     if (q.bookingId != null) { about.push('booking_id = ?'); args.push(q.bookingId); }
     if (q.seriesId != null) { about.push('series_id = ?'); args.push(q.seriesId); }

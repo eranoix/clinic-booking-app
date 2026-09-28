@@ -1,9 +1,5 @@
 @import "tailwindcss";
 
-/*
- * One accent colour marks what can be acted on. Red is for errors only, so a
- * cancellation is shown struck through in grey.
- */
 :root {
   --bg: #eff2f1;
   --surface: #ffffff;
@@ -125,7 +121,6 @@
   --color-notice: var(--notice);
   --color-notice-soft: var(--notice-soft);
   --font-sans: var(--font-grotesk), ui-sans-serif, system-ui, sans-serif;
-  /* A modular scale on a 4:3 ratio from 15px. */
   --text-xs: 0.75rem;
   --text-xs--line-height: 1.1rem;
   --text-sm: 0.84375rem;
@@ -159,7 +154,6 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Lining figures, not tabular: this font's tabular set also widens the colon. */
 .tnum {
   font-variant-numeric: lining-nums;
 }
@@ -174,7 +168,6 @@ body {
   background: var(--accent-soft);
 }
 
-/* Staff hue tokens, applied by class so markup names a person, not a colour. */
 .hue-blue { --hue: var(--staff-blue); --hue-soft: var(--staff-blue-soft); }
 .hue-green { --hue: var(--staff-green); --hue-soft: var(--staff-green-soft); }
 .hue-ochre { --hue: var(--staff-ochre); --hue-soft: var(--staff-ochre-soft); }

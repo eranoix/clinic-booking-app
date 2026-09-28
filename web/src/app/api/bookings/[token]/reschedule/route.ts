@@ -4,7 +4,6 @@ import { reschedule } from '@/server/scheduling';
 
 export const dynamic = 'force-dynamic';
 
-/** POST /api/bookings/:token/reschedule { startsAt } -- same booking, same link, new time. */
 export async function POST(req: Request, ctx: { params: Promise<{ token: string }> }) {
   try {
     const { token } = await ctx.params;

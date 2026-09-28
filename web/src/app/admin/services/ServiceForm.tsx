@@ -17,10 +17,6 @@ const BLANK: ServiceDef = {
   minNoticeMin: 180, maxAdvanceDays: 60, active: true, staffIds: [],
 };
 
-/**
- * Edit a service, or with no `service`, add one. `bookings` is how many
- * appointments use it: a service with any can be deactivated but not removed.
- */
 export function ServiceForm({ service: given, staff, bookings = 0 }: { service?: ServiceDef; staff: Staff[]; bookings?: number }) {
   const service = given ?? BLANK;
   const isNew = !given;
@@ -148,10 +144,6 @@ function summary(v: { durationMin: number; stepMin: number; bufferAfterMin: numb
   return `Patients see a ${durationLabel(v.durationMin)} appointment starting every ${v.stepMin} minutes, with ${hoursLabel(v.minNoticeHours)} and up to ${v.maxAdvanceDays} days ahead. Booked back to back, one starts every ${durationLabel(gap)}${v.bufferAfterMin ? `, including ${v.bufferAfterMin} minutes kept free` : ''}.`;
 }
 
-/**
- * Two appointments booked back to back, drawn to scale on the start-time grid:
- * the clearest way to show what length, gap and grid do together.
- */
 function Timeline({ durationMin, stepMin, bufferAfterMin }: { durationMin: number; stepMin: number; bufferAfterMin: number }) {
   if (!(durationMin > 0 && stepMin > 0 && bufferAfterMin >= 0)) return null;
   const second = Math.ceil((durationMin + bufferAfterMin) / stepMin) * stepMin;

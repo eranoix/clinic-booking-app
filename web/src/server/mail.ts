@@ -1,15 +1,9 @@
-/**
- * What the clinic would email, composed from the engine's booking events inside
- * the transaction that makes each change (see EngineOptions.outbox). There is
- * no SMTP here: the Outbox pages read the table instead.
- */
 import 'server-only';
 import type { Booking, BookingEvent, OutboxDraft, SkippedOccurrence } from 'clinic-booking-app';
 import { CLINIC } from '@/lib/clinic';
 import { dayFull, dayShort, time } from '@/lib/time';
 import type { Catalog } from './catalog';
 
-/** Where links in messages point: PUBLIC_URL when set, else the local server on PORT. */
 export function baseUrl(): string {
   const configured = process.env.PUBLIC_URL?.trim();
   if (configured) return configured.replace(/\/+$/, '');
@@ -131,7 +125,6 @@ export function composer(catalog: Catalog) {
   };
 }
 
-/** A skipped course date, in words the front desk and the patient both understand. */
 export function skipReason(s: Pick<SkippedOccurrence, 'code'>, staff: string): string {
   return s.code === 'taken'
     ? `${staff} already has an appointment then`

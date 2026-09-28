@@ -63,7 +63,6 @@ export function BookingFlow({ services, staff, todayDate, initialService, initia
         const err = (body as ApiError).error;
         setProblem(err);
         if (err.code === 'slot_taken' || err.code === 'not_offered') {
-          // What they were looking at is out of date; read it again.
           setSlot(null);
           setRefreshKey((k) => k + 1);
         }

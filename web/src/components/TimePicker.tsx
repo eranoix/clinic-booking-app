@@ -9,11 +9,6 @@ const PAGE = 14;
 
 type Days = { date: string; count: number }[];
 
-/**
- * A two-week strip of days with free-time counts, and the free times of the
- * chosen day, all from the engine via /api/days and /api/slots. Changing
- * `refreshKey` forces a re-read, e.g. after a booking attempt loses a race.
- */
 export function TimePicker({
   serviceId, staffId, todayDate, horizonDays, date, onDate, slot, onSlot, refreshKey = 0, showStaff, rules = 'public',
 }: {
@@ -27,7 +22,6 @@ export function TimePicker({
   onSlot: (s: SlotDTO) => void;
   refreshKey?: number;
   showStaff: boolean;
-  /** 'desk' shows the front desk's times: no online notice period. Needs a signed-in session. */
   rules?: 'public' | 'desk';
 }) {
   const extra = rules === 'desk' ? '&rules=desk' : '';
@@ -37,8 +31,6 @@ export function TimePicker({
   const [error, setError] = useState<string | null>(null);
   const lastPage = addDays(todayDate, Math.max(0, Math.floor(horizonDays / PAGE)) * PAGE);
 
-  // Keep the chosen date visible: an alternative offered after a lost race
-  // can sit on a later page.
   useEffect(() => {
     if (date && (daysBetween(pageStart, date) < 0 || daysBetween(pageStart, date) >= PAGE)) {
       setPageStart(addDays(todayDate, Math.floor(daysBetween(todayDate, date) / PAGE) * PAGE));
@@ -61,7 +53,6 @@ export function TimePicker({
       })
       .catch(() => live && setError('The diary could not be loaded. Check your connection and try again.'));
     return () => { live = false; };
-    // onDate/date are read, not subscribed to: re-running on every choice would refetch the strip.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [serviceId, staffId, pageStart, refreshKey, extra]);
 

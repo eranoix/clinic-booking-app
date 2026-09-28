@@ -1,11 +1,3 @@
-/**
- * Refresh the engine copy in web/node_modules after rebuilding it.
- *
- * The engine is installed as a real copy (install-links=true in .npmrc), not a
- * symlink, so Next.js treats it and its native driver as external packages; a
- * copy does not see later edits, hence this step. If the engine's
- * dependencies change, run `npm install` here.
- */
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';

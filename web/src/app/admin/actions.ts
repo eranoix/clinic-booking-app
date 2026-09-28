@@ -1,9 +1,5 @@
 'use server';
 
-/**
- * Front-desk writes. Each one re-validates on the server -- a form value is a
- * claim, not a fact -- and hands the decision to the engine or the catalogue.
- */
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { windowsForDate, type WeeklyRule } from 'clinic-booking-app/availability';
@@ -34,7 +30,6 @@ export async function rescheduleAction(_prev: ActionState, form: FormData): Prom
   if (!current) return { error: { code: 'not_found', message: 'That booking no longer exists.' } };
   if (!Number.isFinite(startsAt)) return { error: { code: 'invalid', message: 'Choose a new time first.' } };
   try {
-    // Desk rules: reception may move someone inside the online notice period.
     reschedule(current.publicToken, startsAt, { ...(staffId ? { staffId } : {}), rules: 'desk' });
   } catch (err) {
     return asError(err);
@@ -74,7 +69,6 @@ const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Frid
 export interface HoursResult {
   ok?: true;
   error?: string;
-  /** Upcoming bookings that now fall outside the hours. They are kept, not moved. */
   outside?: BookingDTO[];
 }
 
@@ -125,17 +119,12 @@ export async function removeExceptionAction(staffId: string, date: string): Prom
   return { ok: true, outside: outsideHours(staffId) };
 }
 
-/** Busy intervals for the live preview: bookings are the only input the browser cannot compute. */
 export async function busyAction(staffId: string, date: string) {
   await requireAdmin();
   if (!isValidDate(date) || !catalog().member(staffId)) return [];
   return busyOn(staffId, date);
 }
 
-/**
- * Upcoming confirmed bookings that the current hours no longer cover. Changing
- * hours never cancels anybody; the front desk is told who is affected instead.
- */
 function outsideHours(staffId: string): BookingDTO[] {
   const member = catalog().member(staffId);
   if (!member) return [];
@@ -149,7 +138,6 @@ export interface ServiceResult {
   ok?: true;
   error?: string;
   field?: string;
-  /** Id of a service just added. */
   created?: string;
 }
 
@@ -258,8 +246,6 @@ export async function setStaffActiveAction(form: FormData): Promise<void> {
 export async function deleteStaffAction(form: FormData): Promise<void> {
   await requireAdmin();
   const id = String(form.get('id') ?? '');
-  // Someone with any booking, past or cancelled, is deactivated instead:
-  // deleting them would leave appointments that name nobody.
   if (engine().list({ resourceId: id, limit: 1 }).length) redirect('/admin/team?done=kept');
   catalog().deleteStaff(id);
   revalidatePath('/admin', 'layout');

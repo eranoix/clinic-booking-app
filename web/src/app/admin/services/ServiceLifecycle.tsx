@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { deleteServiceAction, setServiceActiveAction } from '../actions';
 
-/** Stop offering a service, offer it again, or remove one that was never booked. */
 export function ServiceLifecycle({ id, name, active, bookings }: { id: string; name: string; active: boolean; bookings: number }) {
   const [asking, setAsking] = useState(false);
   if (!active) {

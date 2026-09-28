@@ -5,14 +5,6 @@ import { ANY, book, bookCourse } from '@/server/scheduling';
 
 export const dynamic = 'force-dynamic';
 
-/**
- * POST /api/admin/bookings -- the front desk books for someone.
- * { service, staff, preference?, startsAt, name, email, repeat?: { count, intervalWeeks } }
- *
- * Desk rules: no online notice period, a longer horizon. Without `repeat`,
- * 201 { booking }. With it, 201 { course: { seriesId, booked, skipped } }.
- * A lost race is 409 slot_taken with `alternatives`, as on /api/bookings.
- */
 export async function POST(req: Request) {
   try {
     await requireAdmin();

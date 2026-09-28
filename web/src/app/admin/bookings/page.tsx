@@ -17,7 +17,6 @@ export default async function BookingsPage({ searchParams }: { searchParams: Sea
   let from = isValidDate(one(sp.from)) ? one(sp.from) : today(now);
   let to = isValidDate(one(sp.to)) ? one(sp.to) : addDays(from, 13);
   if (daysBetween(from, to) < 0) [from, to] = [to, from];
-  // A year is plenty for one screen and keeps a typo from rendering a decade.
   if (daysBetween(from, to) > 366) to = addDays(from, 366);
   const staffId = staff.some((s) => s.id === one(sp.staff)) ? one(sp.staff) : '';
   const serviceId = services.some((s) => s.id === one(sp.service)) ? one(sp.service) : '';

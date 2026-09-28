@@ -29,7 +29,6 @@ function toRules(week: Week): WeeklyRule[] {
 
 const same = (a: Week, b: Week) => JSON.stringify(toRules(a)) === JSON.stringify(toRules(b));
 
-/** A problem with one day's windows, or null. Mirrors the server's check so mistakes show before saving. */
 function problemWith(ws: Win[]): string | null {
   const sorted = [...ws].sort((a, b) => minutesOf(a.start) - minutesOf(b.start));
   for (const w of sorted) {
@@ -309,11 +308,6 @@ function ExceptionsSection({ member, exceptions, todayDate, onResult }: {
   );
 }
 
-/**
- * The slots a date would offer, computed in the browser by the engine's own
- * `slots()` (what `book()` checks against) from the draft hours and existing
- * bookings, so the preview is exact.
- */
 function Preview({ member, services, saved, draft, dirty, todayDate }: {
   member: StaffMember;
   services: ServiceDef[];
@@ -323,7 +317,6 @@ function Preview({ member, services, saved, draft, dirty, todayDate }: {
   todayDate: string;
 }) {
   const firstWorking = useMemo(() => {
-    // A week out: near days are usually full, and a full day shows nothing changing.
     for (let i = 7; i <= 21; i += 1) {
       const d = addDays(todayDate, i);
       if (windowsForDate(saved, d).length) return d;

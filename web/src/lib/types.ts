@@ -1,16 +1,10 @@
-/**
- * Shapes that cross the server/browser boundary. Plain data only: these are
- * serialised into props, JSON responses and server-action results.
- */
 import type { Calendar, DateException } from 'clinic-booking-app/availability';
 
 export interface StaffMember {
   id: string;
   name: string;
   role: string;
-  /** A token name from the stylesheet, not a colour value. */
   hue: 'blue' | 'green' | 'ochre' | 'plum' | 'slate';
-  /** Inactive people keep their history and are not offered for new bookings. */
   active: boolean;
   calendar: Calendar;
 }
@@ -24,7 +18,6 @@ export interface ServiceDef {
   bufferAfterMin: number;
   minNoticeMin: number;
   maxAdvanceDays: number;
-  /** Inactive services keep their history and are not offered for new bookings. */
   active: boolean;
   staffIds: string[];
 }
@@ -63,7 +56,6 @@ export interface ApiError {
   };
 }
 
-/** A DateException plus the note the front desk attached ("Training course"). */
 export interface ExceptionWithNote extends DateException {
   note: string;
 }
