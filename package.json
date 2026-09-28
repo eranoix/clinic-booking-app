@@ -27,7 +27,8 @@
     "typecheck": "tsc --noEmit",
     "demo": "tsx examples/clinic.ts",
     "app": "node scripts/app.mjs",
-    "reset": "npm --prefix web run reset"
+    "reset": "npm --prefix web run reset",
+    "prepare": "git config core.hooksPath .githooks || true"
   },
   "dependencies": {
     "better-sqlite3": "^12.11.1"
